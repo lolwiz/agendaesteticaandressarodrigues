@@ -40,6 +40,12 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 .cal .c.ok{border-color:var(--gr);background:#e3f4ea}.cal .c.ok.s{background:#c9ebd6}.okm{color:var(--gr);font-weight:700}
 .ev{background:var(--or);color:#fff;border-radius:4px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ev.ab{background:var(--rd)}.ev.ok{background:var(--gr)}
 .dots{display:none}
+/* resumo semana / mês abaixo do calendário */
+.sumh{display:flex;align-items:center;gap:8px;margin:14px 0 6px;flex-wrap:wrap}.sumh h4{margin:0;font-size:14px;color:var(--dk);flex:1}
+.sumg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sumc{background:#fff8f1;border-radius:10px;padding:10px;border-left:4px solid var(--or)}
+.sumc.liq{border-left-color:var(--gr)}.sumc span{display:block;font-size:12px;color:#8a6a50}.sumc b{display:block;font-size:18px;color:var(--dk);margin-top:2px}
+.sumc.liq b{color:var(--gr)}.sumc small{display:block;font-size:11px;color:#8a6a50;margin-top:2px}
 .ag{display:grid;grid-template-columns:2fr 1fr;gap:14px}@media(max-width:900px){.ag{grid-template-columns:1fr}}
 .it{display:flex;gap:10px;padding:8px;border-bottom:1px solid #f3dcc6;font-size:13px;cursor:pointer}.it:hover{background:#fff4ea}.it .hr{font-weight:700;color:var(--dk);min-width:48px}
 .pill{font-size:11px;padding:1px 7px;border-radius:10px;background:#eee;white-space:nowrap}
@@ -100,6 +106,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 .modal .hd h3{margin:0;flex:1;font-size:16px;color:var(--dk);text-transform:capitalize}
 .modal .bd{overflow:auto;padding:10px 14px}.modal .ft{padding:10px 14px;border-top:1px solid #f3dcc6;display:flex;gap:8px;flex-wrap:wrap}
 #agM{z-index:32}#agOk{text-align:center;padding:18px 4px}#agOk h3{font-size:20px;color:var(--gr);margin:6px 0}
+@media(max-width:900px){.sumg{grid-template-columns:repeat(2,1fr)}}
 /* Smartphone */
 @media(max-width:640px){
  body{font-size:14px}
@@ -115,6 +122,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
  #fab{bottom:76px}
  .kpis{grid-template-columns:1fr 1fr;gap:6px}.kpi{padding:8px 10px}.kpi b{font-size:16px}.kpi span{font-size:11px}
  .grid{gap:8px}.card{padding:10px}canvas{height:220px}
+ .sumc{padding:8px}.sumc b{font-size:15px}
  .tbl{max-height:none}#tbA thead{display:none}#tbA,#tbA tbody,#tbA tr,#tbA td{display:block;width:100%}
  #tbA tr{background:#fff8f1;border-radius:10px;margin-bottom:6px;padding:8px 10px;display:grid!important;grid-template-columns:1fr auto;gap:2px 8px}
  #tbA td{background:none!important;border:none;padding:0}
@@ -162,7 +170,10 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
    <button type="button" class="sec" id="mPrev" aria-label="Mês anterior">◀</button><h3 id="mTit" style="margin:0;flex:1;text-align:center;text-transform:capitalize"></h3>
    <button type="button" class="sec" id="mHoje">Hoje</button><button type="button" class="sec" id="mNext" aria-label="Próximo mês">▶</button></div>
    <div class="cal" id="cal"></div>
-   <p style="font-size:12px;color:#8a6a50;margin:8px 0 0">Toque em um dia para ver os atendimentos. <span class="okm">Verde ✓</span> = todos concluídos · <span class="abm">Vermelho 💰</span> = com pendência.</p></div>
+   <p style="font-size:12px;color:#8a6a50;margin:8px 0 0">Toque em um dia para ver os atendimentos. <span class="okm">Verde ✓</span> = todos concluídos · <span class="abm">Vermelho 💰</span> = com pendência.</p>
+   <div class="sumh"><h4>💰 Resumo de valores</h4><button type="button" class="sec" id="sumEye" style="padding:4px 10px;font-size:12px" aria-pressed="false">🙈 Ocultar</button></div>
+   <div class="sumg" id="sumAg" aria-live="polite"></div>
+   <p style="font-size:11px;color:#8a6a50;margin:6px 0 0"><b>Liquidado</b> = atendimentos finalizados (já descontadas taxas e descontos). <b>Previsto</b> = liquidado + atendimentos ainda não concluídos, pelo valor da tabela. Faltas e cancelados não contam.</p></div>
   <div>
    <div class="card" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 id="dTit" style="margin:0;flex:1"></h3><button type="button" id="btnNovo" style="padding:6px 10px">➕ Agendar</button></div>
     <p class="legend"><b style="color:var(--gr)">✓</b> compareceu · <b style="color:var(--rd)">✗</b> não compareceu · ✏️ editar</p>
@@ -308,7 +319,8 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 <script>
 window.onerror=function(m,s,l){var d=document.getElementById('load');if(d){d.style.display='flex';d.innerHTML='⚠ Erro: '+m+' (linha '+l+')<br><small>Mande um print deste erro.</small>';}};
 var STORE={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const SITE_VERSAO=17;
+const SITE_VERSAO=17;   /* versão esperada do Código.gs (servidor) */
+const SITE_BUILD=18;    /* versão desta tela */
 
 const $=id=>document.getElementById(id);
 const brl=v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -396,7 +408,6 @@ window.addEventListener('offline',netUpd);
 
 /* ---------- Taxas e cálculo do líquido (com várias formas de pagamento) ---------- */
 function pctOf(pag){const t=TAXAS.find(x=>norm(x.forma)===norm(pag));return t?+t.pct||0:0}
-/* rows: [{f,v}] – a última linha recebe automaticamente o restante */
 function calcPay(v,de,pa,rows){v=numBR(v);de=Math.min(numBR(de),v);const sub=r2(v-de);pa=Math.min(numBR(pa),sub);const cobr=r2(sub-pa);
  let pgs=[],bad=false;
  if(cobr>0){let soma=0;pgs=rows.map((r,i)=>{if(i===rows.length-1){const rest=r2(cobr-soma);if(rest<0)bad=true;return{f:r.f,v:Math.max(0,rest)}}const x=r2(numBR(r.v));soma+=x;return{f:r.f,v:x}});
@@ -456,7 +467,7 @@ function merge(){ALL=AGENDA.filter(a=>FINAL(a.st)).map(a=>{const v=numBR(a.v),de
  return{d:a.d,ds:a.d.toLocaleDateString('pt-BR'),cli:a.cli,proc:a.proc||'—',procs:splitP(a.proc),pgs,forms:pgs.length?[...new Set(pgs.map(p=>p.f))]:[PAGO_ANTES],pag:pagTxt(pgs),v,de,pa,tx,liq:r2(Math.max(0,v-de-pa-tx))}}).sort((a,b)=>a.d-b.d)}
 function splitLiq(r){const l=r.procs.length?r.procs:['—'];if(l.length===1)return[[l[0],r.liq]];
  const w=l.map(p=>priceAt(p,r.d)||0),tot=w.reduce((a,b)=>a+b,0);return l.map((p,i)=>[p,tot?r.liq*w[i]/tot:r.liq/l.length])}
-function refreshFin(){merge();fillFilters();render();renderCx()}
+function refreshFin(){merge();fillFilters();render();renderCx();renderSum()}
 function opts(sel,vals,all){const cur=sel.value;sel.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option value="${esc(v[0])}">${esc(v[1])}</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur}
 const mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 function fillFilters(){const cy=new Date().getFullYear();const anos=[...new Set(ALL.map(r=>r.d.getFullYear()).concat([cy]))].sort((a,b)=>b-a);
@@ -504,13 +515,14 @@ function render(){if($('pFin').style.display==='none')return;const f=filt();cons
  $('tb').innerHTML=f.map(r=>`<tr><td>${r.ds}</td><td>${esc(r.cli)}</td><td>${esc(r.proc)}</td><td>${HIDE&&r.pgs.length>1?esc(r.pag):pagDet(r.pgs)}</td><td>${money(r.v)}</td><td class="neg">${r.de||r.pa?money(r.de+r.pa):''}</td><td class="neg">${r.tx?money(r.tx):''}</td><td><b>${money(r.liq)}</b></td></tr>`).join('')}
 $('fAno').addEventListener('change',()=>{fillFilters();render()});['fMes','fPag','fProc'].forEach(i=>$(i).addEventListener('change',render));$('fBusca').addEventListener('input',render);
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,200)});
-function eyeUpd(){$('btnEye').textContent=HIDE?'👁 Mostrar valores':'🙈 Ocultar valores';$('btnEye').setAttribute('aria-pressed',String(HIDE))}
-$('btnEye').addEventListener('click',()=>{HIDE=!HIDE;STORE.set('dashHide',HIDE?'1':'0');eyeUpd();render();renderCx()});eyeUpd();
+function eyeUpd(){$('btnEye').textContent=HIDE?'👁 Mostrar valores':'🙈 Ocultar valores';$('btnEye').setAttribute('aria-pressed',String(HIDE));
+ $('sumEye').textContent=HIDE?'👁 Mostrar':'🙈 Ocultar';$('sumEye').setAttribute('aria-pressed',String(HIDE))}
+function toggleHide(){HIDE=!HIDE;STORE.set('dashHide',HIDE?'1':'0');eyeUpd();render();renderCx();renderSum()}
+$('btnEye').addEventListener('click',toggleHide);$('sumEye').addEventListener('click',toggleHide);eyeUpd();
 $('btnCsv').addEventListener('click',()=>{const n=v=>String(r2(v)).replace('.',',');const c='Dia;Cliente;Procedimentos;Pagamento;Valor;Desconto;Pago antes;Taxa;Liquido\n'+filt().map(r=>[r.ds,r.cli,r.proc,r.pgs.length>1?r.pgs.map(p=>p.f+' '+n(p.v)).join(' + '):r.pag,n(r.v),n(r.de),n(r.pa),n(r.tx),n(r.liq)].join(';')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv'}));a.download='atendimentos.csv';a.click()});
 
 /* ---------- Caixa ---------- */
-/* Saldo = entradas (líquido dos atendimentos finalizados, sem a parte em permuta) − saídas ± ajustes de saldo */
 const IS_SAIDA=m=>norm(m.tp)!=='ajuste';
 const entVal=r=>r2(Math.max(0,r.liq-r.pgs.filter(p=>norm(p.f)==='permuta').reduce((s,p)=>s+p.v,0)));
 function saldoAtual(){const e=ALL.reduce((a,r)=>a+entVal(r),0);let s=0,aj=0;MOVS.forEach(m=>{if(IS_SAIDA(m))s+=Math.abs(m.v);else aj+=m.v});return r2(e-s+aj)}
@@ -549,7 +561,6 @@ $('cxAjB').addEventListener('click',()=>{$('cxAj').classList.toggle('on');$('cxA
 $('cxAjC').addEventListener('click',()=>$('cxAj').classList.remove('on'));
 $('cxAjV').addEventListener('input',()=>{const d=r2(numS($('cxAjV').value)-saldoAtual());$('cxAjI').textContent=d?`Será lançado um ajuste de ${d>0?'+':'−'} ${brl(Math.abs(d))}.`:'Sem diferença.'});
 $('cxAj').addEventListener('submit',async e=>{e.preventDefault();const novo=numS($('cxAjV').value);
- /* confere com a planilha antes, para o ajuste ficar certo em todos os aparelhos */
  if(navigator.onLine!==false&&!PEND.length){$('cxAjI').textContent='⏳ Conferindo com a planilha...';await sync(false)}
  const dif=r2(novo-saldoAtual());
  if(!dif){$('cxAj').classList.remove('on');status('Saldo já está em '+brl(novo));return}
@@ -561,6 +572,26 @@ let VM=today(),SEL=today(),EDIT=null;VM.setDate(1);
 const liqOf=a=>r2(Math.max(0,numBR(a.v)-numBR(a.de)-numBR(a.pa)-numBR(a.tx)));
 const waLink=a=>{const w=String(a.tel||'').replace(/\D/g,'').replace(/^55/,'');return w?` <a href="https://wa.me/55${w}" target="_blank" title="WhatsApp" aria-label="WhatsApp">💬</a>`:''};
 const pendPill=a=>isPend(a.id)?' <span class="pill pend" title="Guardado no aparelho, aguardando envio">📴 não enviado</span>':'';
+
+/* --- Resumo da semana e do mês (abaixo do calendário) --- */
+/* Liquidado = líquido dos finalizados. Previsto = liquidado + ainda não concluídos (pendente/confirmado/em aberto) pelo valor da tabela. */
+function resumo(ini,fim){let liq=0,aber=0,nF=0,nA=0;
+ AGENDA.forEach(a=>{if(a.d<ini||a.d>fim)return;
+  if(FINAL(a.st)){liq+=liqOf(a);nF++}
+  else if(!FALTA(a.st)&&!CANC(a.st)){aber+=priceSum(a.proc,a.d)||0;nA++}});
+ return{liq:r2(liq),prev:r2(liq+aber),aber:r2(aber),nF,nA}}
+function renderSum(){if(!$('sumAg'))return;const t=today();
+ const ws=new Date(t);ws.setDate(t.getDate()-t.getDay());const we=new Date(ws);we.setDate(ws.getDate()+6);
+ const ms=new Date(VM.getFullYear(),VM.getMonth(),1),me=new Date(VM.getFullYear(),VM.getMonth()+1,0);
+ const s=resumo(ws,we),m=resumo(ms,me),dm=d=>d.toLocaleDateString('pt-BR').slice(0,5);
+ const mesNome=VM.toLocaleDateString('pt-BR',{month:'long'});
+ const card=(cls,tit,val,sub)=>`<div class="sumc ${cls}"><span>${tit}</span><b>${money(val)}</b><small>${sub}</small></div>`;
+ $('sumAg').innerHTML=
+  card('liq','✅ Liquidado na semana',s.liq,`${dm(ws)} a ${dm(we)} · ${s.nF} atend.`)+
+  card('','📈 Previsto na semana',s.prev,s.nA?`falta receber ${money(s.aber)} (${s.nA})`:'nada pendente')+
+  card('liq','✅ Liquidado no mês',m.liq,`${mesNome} · ${m.nF} atend.`)+
+  card('','📈 Previsto no mês',m.prev,m.nA?`falta receber ${money(m.aber)} (${m.nA})`:'nada pendente')}
+
 function lnHtml(a){const fin=FINAL(a.st),fal=FALTA(a.st),can=CANC(a.st),cl=fin||fal||can,ab=ABERTA(a);
  const sub=[esc(a.proc)||'—',
   fin?`<b style="color:var(--gr)">${brl(liqOf(a))}</b> · ${pagDet(parsePags(a))}`:'',
@@ -608,6 +639,7 @@ function renderAg(){const t=today(),by={};AGENDA.forEach(a=>(by[key(a.d)]=by[key
  for(let i=0;i<42;i++){const d=new Date(st);d.setDate(st.getDate()+i);const ev=by[key(d)]||[],ab=ev.filter(ABERTA).length,vis=ev.filter(a=>!CANC(a.st)),ok=!ab&&vis.length>0&&vis.every(a=>FINAL(a.st)||FALTA(a.st));
   h+=`<div class="c ${d.getMonth()!==VM.getMonth()?'o':''} ${key(d)===key(t)?'t':''} ${key(d)===key(SEL)?'s':''} ${ab?'ab':ok?'ok':''}" data-k="${iso(d)}" role="button" tabindex="0" aria-label="${d.toLocaleDateString('pt-BR')}: ${ev.length} atendimento(s)${ab?', '+ab+' com pendência':ok?', todos concluídos':''}"><b>${d.getDate()}</b>${ab?' <span class="abm">💰'+ab+'</span>':ok?' <span class="okm">✓</span>':''}${ev.slice(0,3).map(a=>`<div class="ev ${ABERTA(a)?'ab':ok?'ok':''}">${esc(a.h)} ${esc(a.cli)}</div>`).join('')}${ev.length>3?`<div class="ev">+${ev.length-3}</div>`:''}${ev.length?`<div class="dots">${ev.slice(0,4).map(a=>`<i class="${ABERTA(a)?'ab':ok?'ok':''}"></i>`).join('')}</div>`:''}</div>`}
  $('cal').innerHTML=h;
+ renderSum();
  $('dTit').textContent=SEL.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit'});
  dayRender($('dList'),by[key(SEL)]||[]);
  $('nTit').textContent=pd.d?'Próximo dia · '+pd.d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit'}):'Próximo dia';
@@ -761,7 +793,7 @@ function renderPr(){const t=today(),b=norm($('prBusca').value),all=procList(),l=
   ${HIST===norm(x.proc)?`<div class="prH">${x.rows.slice().reverse().map(r=>`<div>${r.d.getFullYear()>2020?'a partir de '+r.d.toLocaleDateString('pt-BR'):'valor inicial'} → <b>${brl(r.v)}</b>${x.rows.length>1?` <button type="button" class="sec mini" data-a="delh" data-id="${esc(r.id)}" aria-label="Apagar este registro">✕</button>`:''}</div>`).join('')}</div>`:''}</div>`}).join('')
   :'<p style="color:#999">Nenhum procedimento encontrado.</p>'}
 $('prBusca').addEventListener('input',renderPr);
-function afterPr(r){PRECOS=prFromServer(r.precos);savePr();if(r.ag){AGENDA=applyPend(agFromServer(r.ag));saveAg();renderAg();refreshFin()}fillProcs();renderPr();pfInfo()}
+function afterPr(r){PRECOS=prFromServer(r.precos);savePr();if(r.ag){AGENDA=applyPend(agFromServer(r.ag));saveAg();renderAg();refreshFin()}fillProcs();renderPr();pfInfo();renderSum()}
 const errNet=err=>alert('Não foi possível salvar (esta parte precisa de internet).\n'+(err&&err.message||err));
 $('prList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const proc=b.closest('.pr').dataset.p,act=b.dataset.a;
  if(act==='alt'){$('pfP').value=proc;$('pfV').value=vTxt(priceAt(proc,today()));$('pfD').value=iso(today());$('pfTit').textContent='✏️ Alterar valor: '+proc;pfInfo();
@@ -797,7 +829,7 @@ function sync(manual){if(BUSY)return BUSY;if(manual)status('🔄 Atualizando...'
   const nAb=AGENDA.filter(ABERTA).length;
   status(`✅ ${AGENDA.length} na agenda${nAb?' · ⚠ '+nAb+' comanda(s) em aberto':''} · ${r.atualizado}`)}
  catch(e){if(e&&e.auth){status('🔐 Informe a senha');return}status(isNetErr(e)?'📴 Sem internet – usando os dados guardados no aparelho':'⚠ Não consegui ler a planilha: '+(e&&e.message||e))}
- finally{netUpd();$('load').style.display='none';$('acInfo').textContent='Site versão '+SITE_VERSAO+(LASTSYNC?' · última sincronização '+new Date(LASTSYNC).toLocaleString('pt-BR').slice(0,17):'')}})()
+ finally{netUpd();$('load').style.display='none';$('acInfo').textContent='Site versão '+SITE_BUILD+(LASTSYNC?' · última sincronização '+new Date(LASTSYNC).toLocaleString('pt-BR').slice(0,17):'')}})()
  .finally(()=>{BUSY=null});return BUSY}
 $('btnRef').addEventListener('click',()=>sync(true));
 
