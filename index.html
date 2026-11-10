@@ -74,6 +74,14 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 .payb label{font-size:12px;color:#8a6a50;display:flex;flex-direction:column;gap:3px}.payb .full{grid-column:1/-1}.payb input,.payb select{width:100%}
 .res{font-size:13px;line-height:1.5;background:#fff;border-radius:6px;padding:6px 8px}.res b{color:var(--gr)}.res .tx{color:var(--rd)}
 .bOk{background:var(--gr)}
+/* caixa */
+.cxg{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}@media(max-width:900px){.cxg{grid-template-columns:1fr}}
+#cxSaldo{border-left:6px solid var(--gr);margin-bottom:14px}#cxSaldo.negat{border-left-color:var(--rd)}
+#cxVal{font-size:34px;font-weight:800;color:var(--gr);margin:4px 0}#cxSaldo.negat #cxVal{color:var(--rd)}
+#cxAj{display:none;margin-top:10px;background:#fff4ea;border:1px dashed var(--or);border-radius:8px;padding:10px}#cxAj.on{display:block}
+.mv{display:grid;grid-template-columns:52px minmax(0,1fr) auto 36px 36px;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid #f3dcc6;font-size:13px}
+.mv .dt{color:#8a6a50;font-size:12px}.mv .vl{font-weight:700;white-space:nowrap}.mv .vl.s{color:var(--rd)}.mv .vl.a{color:#5b3c99}
+.mv button{width:36px;height:36px;padding:0;border-radius:50%;background:#fff;border:1px solid var(--or);color:var(--or)}.mv button.del{border-color:var(--rd);color:var(--rd)}
 /* valores */
 .prg{display:grid;grid-template-columns:1fr 2fr;gap:14px}@media(max-width:900px){.prg{grid-template-columns:1fr}}
 .pr{border:1px solid #f3dcc6;border-radius:10px;padding:10px;margin-bottom:8px}
@@ -100,8 +108,8 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
  .filtros label{display:flex;justify-content:space-between;align-items:center;gap:8px}.filtros select,.filtros input{flex:1;min-height:40px;font-size:16px}
  #st{order:9;width:100%;font-size:11px}
  #logo{height:60px;width:60px}
- .tabs{position:fixed;bottom:0;left:0;right:0;margin:0;background:#fff;padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:6px;box-shadow:0 -2px 10px #0002;z-index:15}
- .tab{flex:1;min-height:46px;font-size:13px;padding:6px 4px}
+ .tabs{position:fixed;bottom:0;left:0;right:0;margin:0;background:#fff;padding:8px 6px calc(8px + env(safe-area-inset-bottom));gap:4px;box-shadow:0 -2px 10px #0002;z-index:15}
+ .tab{flex:1;min-height:46px;font-size:12px;padding:6px 2px}.tab .lg{display:none}
  #fab{bottom:76px}
  .kpis{grid-template-columns:1fr 1fr;gap:6px}.kpi{padding:8px 10px}.kpi b{font-size:16px}.kpi span{font-size:11px}
  .grid{gap:8px}.card{padding:10px}canvas{height:220px}
@@ -115,6 +123,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
  .fm input,.fm select,.fm textarea,.payb input,.payb select,.prow select{min-height:42px;font-size:16px}
  button{min-height:40px}.it{padding:10px 6px}
  .ln{grid-template-columns:44px minmax(0,1fr) 38px 38px 38px;gap:4px;padding:8px 2px}.ic{width:38px;height:38px}
+ #cxVal{font-size:28px}
 }
 </style></head><body>
 <div id="load">⏳ Carregando dados da planilha...<small id="loadT" style="font-size:13px;margin-top:8px"></small></div>
@@ -137,7 +146,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
  <button type="button" class="sec" id="btnCsv">⬇ CSV</button>
 </div>
 <div id="offBar" role="status" aria-live="polite"></div>
-<div class="tabs"><button type="button" class="tab on" data-t="age">📅 Agenda</button><button type="button" class="tab" data-t="fin">📊 Financeiro</button><button type="button" class="tab" data-t="proc">💲 Valores e taxas</button></div>
+<div class="tabs"><button type="button" class="tab on" data-t="age">📅 Agenda</button><button type="button" class="tab" data-t="fin">📊 Financeiro</button><button type="button" class="tab" data-t="cx">💵 Caixa</button><button type="button" class="tab" data-t="proc">💲 Valores<span class="lg"> e taxas</span></button></div>
 
 <!-- AGENDA -->
 <div id="pAge">
@@ -172,6 +181,41 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
   <div class="card"><h3>Faturamento por dia da semana</h3><canvas id="cSem"></canvas></div>
  </div>
  <div class="card"><h3>Atendimentos (<span id="nReg">0</span>)</h3><div class="tbl"><table id="tbA"><thead><tr><th>Dia</th><th>Cliente</th><th>Procedimento(s)</th><th>Pagamento</th><th>Valor</th><th>Desc./Pago antes</th><th>Taxa</th><th>Líquido</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+</div>
+
+<!-- CAIXA -->
+<div id="pCx" style="display:none">
+ <div class="cxg">
+  <div>
+   <div class="card" id="cxSaldo"><h3>💵 Saldo atual do caixa</h3>
+    <div id="cxVal">R$ 0,00</div>
+    <div id="cxInfo" style="font-size:12px;color:#8a6a50"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"><button type="button" class="sec" id="cxAjB">✏️ Editar saldo</button></div>
+    <form id="cxAj" autocomplete="off">
+     <label style="font-size:12px;color:#8a6a50;display:flex;flex-direction:column;gap:3px">Saldo correto agora (R$)<input id="cxAjV" inputmode="decimal" required placeholder="0,00" style="font-size:16px"></label>
+     <label style="font-size:12px;color:#8a6a50;display:flex;flex-direction:column;gap:3px;margin-top:6px">Motivo (opcional)<input id="cxAjM" placeholder="Ex.: conferência do caixa"></label>
+     <div id="cxAjI" style="font-size:12px;color:#5b3c99;margin:6px 0"></div>
+     <div style="display:flex;gap:6px"><button type="submit">💾 Salvar saldo</button><button type="button" class="sec" id="cxAjC">Cancelar</button></div>
+    </form>
+   </div>
+   <div class="card"><h3 id="sxTit">➖ Nova saída</h3>
+    <form id="fSx" class="fm" autocomplete="off">
+     <label>Data<input type="date" id="sxD" required></label>
+     <label>Valor (R$)<input id="sxV" inputmode="decimal" required placeholder="0,00"></label>
+     <label class="full">Descrição<input id="sxDs" required placeholder="Ex.: Compra de cera"></label>
+     <label>Categoria<select id="sxC"><option>Produtos / materiais</option><option>Aluguel</option><option>Energia</option><option>Água</option><option>Internet / telefone</option><option>Marketing</option><option>Equipamentos</option><option>Impostos / taxas</option><option>Retirada pessoal</option><option>Outros</option></select></label>
+     <label>Pago com<select id="sxF"><option>Dinheiro</option><option>Pix</option><option>Cartão</option><option>Outro</option></select></label>
+     <div class="full" style="display:flex;gap:6px;flex-wrap:wrap"><button type="submit">💾 Salvar saída</button><button type="button" class="sec" id="sxN">Limpar</button></div>
+     <span id="sxMsg" class="full" style="font-size:12px;color:var(--gr)" aria-live="polite"></span>
+    </form>
+   </div>
+  </div>
+  <div>
+   <div class="kpis" id="kCx" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))"></div>
+   <div class="card"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0;flex:1">Movimentos</h3><select id="cxMes" aria-label="Mês"></select></div>
+    <div id="mvList"></div></div>
+  </div>
+ </div>
 </div>
 
 <!-- VALORES E TAXAS -->
@@ -242,6 +286,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
   </div>
  </div>
 </div></div>
+
 <div id="setup" class="modal" role="dialog" aria-modal="true" aria-labelledby="suT"><div class="box">
  <div class="hd"><h3 id="suT" style="text-transform:none">🔐 Acesso à agenda</h3></div>
  <form class="bd" id="suF" autocomplete="off">
@@ -280,6 +325,7 @@ const FALTA=st=>/falt/.test(norm(st)),CANC=st=>/cancel/.test(norm(st));
 const FECHADO=st=>FINAL(st)||FALTA(st)||CANC(st);
 const ABERTA=a=>!FECHADO(a.st)&&(a.d<today()||(key(a.d)===key(today())&&!!a.h&&a.h<=nowHM()));
 const numBR=v=>{if(typeof v==='number')return isFinite(v)?Math.max(0,v):0;let t=String(v||'').replace(/R\$|%|\s/g,'');if(!t)return 0;if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');const n=parseFloat(t);return isNaN(n)||!isFinite(n)?0:Math.max(0,n)};
+const numS=v=>{if(typeof v==='number')return isFinite(v)?v:0;const neg=/^\s*-/.test(String(v||''));return neg?-numBR(String(v).replace('-','')):numBR(v)};
 const vTxt=v=>v?String(+(+v).toFixed(2)).replace('.',','):'';
 const r2=v=>Math.round(v*100)/100;
 const intIn=(v,max)=>{const n=parseInt(v,10);return isNaN(n)||n<1?0:Math.min(n,max||99)};
@@ -290,41 +336,46 @@ const joinP=l=>l.filter(Boolean).join(' + ');
 const sesTxt=a=>a.tot?`Sessão ${a.ses||'?'}/${a.tot}`:a.ses?`Sessão ${a.ses}`:'';
 const sesPill=a=>{const t=sesTxt(a);return t?` <span class="pill ses">${t}${a.tot&&a.ses===a.tot?' · última':''}</span>`:''};
 const byHora=(a,b)=>a.d-b.d||String(a.h).localeCompare(String(b.h));
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 function fromCache(k,fn){try{return (JSON.parse(STORE.get(k)||'[]')||[]).map(fn).filter(x=>x.d)}catch(e){return[]}}
 let AGENDA=fromCache('dashAg',a=>({...a,d:toDate(a.d)}));
+let MOVS=fromCache('dashMv',m=>({...m,d:toDate(m.d)}));
 let PRECOS=fromCache('dashPr',p=>({...p,d:toDate(p.d)}));
 if(!PRECOS.length)PRECOS=Object.entries(PADRAO).map(([proc,v],i)=>({id:'p'+i,proc,v,d:new Date(2020,0,1),ativo:true}));
 let TAXAS=(()=>{try{const t=JSON.parse(STORE.get('dashTx')||'null');return Array.isArray(t)&&t.length?t:TAXAS_PADRAO}catch(e){return TAXAS_PADRAO}})();
 const saveAg=()=>STORE.set('dashAg',JSON.stringify(AGENDA.map(a=>({...a,d:iso(a.d)}))));
+const saveMv=()=>STORE.set('dashMv',JSON.stringify(MOVS.map(m=>({...m,d:iso(m.d)}))));
 const savePr=()=>STORE.set('dashPr',JSON.stringify(PRECOS.map(p=>({...p,d:iso(p.d)}))));
 const saveTx=()=>STORE.set('dashTx',JSON.stringify(TAXAS));
 
-/* ---------- Fila offline: alterações da agenda ficam guardadas no aparelho até a internet voltar ---------- */
+/* ---------- Fila offline (agenda e caixa) ---------- */
 let PEND=(()=>{try{const p=JSON.parse(STORE.get('dashPend')||'[]');return Array.isArray(p)?p:[]}catch(e){return[]}})();
 const savePend=()=>STORE.set('dashPend',JSON.stringify(PEND));
-const opId=op=>op.t==='save'?op.a.id:op.id;
+const opId=op=>op.t==='save'?op.a.id:op.t==='del'?op.id:op.t==='msave'?'m:'+op.m.id:'m:'+op.id;
 const isPend=id=>PEND.some(p=>opId(p)===id);
-function applyPend(list){PEND.forEach(op=>{if(op.t==='save'){const a={...op.a,d:toDate(op.a.d)};list=list.filter(x=>x.id!==a.id);list.push(a)}else list=list.filter(x=>x.id!==op.id)});return list}
+function applyPend(list){PEND.forEach(op=>{if(op.t==='save'){const a={...op.a,d:toDate(op.a.d)};list=list.filter(x=>x.id!==a.id);list.push(a)}else if(op.t==='del')list=list.filter(x=>x.id!==op.id)});return list}
+function applyPendM(list){PEND.forEach(op=>{if(op.t==='msave'){const m={...op.m,d:toDate(op.m.d)};list=list.filter(x=>x.id!==m.id);list.push(m)}else if(op.t==='mdel')list=list.filter(x=>x.id!==op.id)});return list}
 function netUpd(){const n=PEND.length,off=navigator.onLine===false,b=$('offBar');
  if(!n&&!off){b.style.display='none';return}
  b.style.display='';
- b.innerHTML=(off?'📴 <b>Sem internet.</b> Você pode continuar usando a agenda normalmente. ':'⏳ ')+
-  (n?`<b>${n}</b> alteração(ões) guardada(s) neste aparelho – serão enviadas para a planilha sozinhas quando a conexão voltar. <b>Não feche o dashboard até lá.</b>`:'As alterações ficarão guardadas neste aparelho.')}
+ b.innerHTML=(off?'📴 <b>Sem internet.</b> Você pode continuar usando a agenda e o caixa normalmente. ':'⏳ ')+
+  (n?`<b>${n}</b> alteração(ões) guardada(s) neste aparelho – serão enviadas para a planilha quando a conexão voltar.`:'As alterações ficarão guardadas neste aparelho.')}
 function queue(op){PEND=PEND.filter(p=>opId(p)!==opId(op));PEND.push(op);savePend();netUpd();return flush()}
 let FLUSHING=null;
 function flush(){if(FLUSHING)return FLUSHING;if(!PEND.length){netUpd();return Promise.resolve(true)}
- FLUSHING=(async()=>{let last=null;
+ FLUSHING=(async()=>{let lastA=null,lastM=null;
   while(PEND.length){const op=PEND[0];
-   try{last=op.t==='save'?await GS('salvarAg',op.a):await GS('excluirAg',op.id)}
+   try{if(op.t==='save')lastA=await GS('salvarAg',op.a);else if(op.t==='del')lastA=await GS('excluirAg',op.id);
+    else if(op.t==='msave')lastM=await GS('salvarMov',op.m);else lastM=await GS('excluirMov',op.id)}
    catch(e){netUpd();return false}
    PEND=PEND.filter(p=>p!==op);savePend()}
-  if(last){AGENDA=applyPend(agFromServer(last));saveAg();renderAg();refreshFin();renderPop();fillCli()}
-  netUpd();return true})().finally(()=>{FLUSHING=null});
+  if(lastA){AGENDA=applyPend(agFromServer(lastA));saveAg();renderAg();refreshFin();renderPop();fillCli()}
+  if(lastM){MOVS=applyPendM(mvFromServer(lastM));saveMv()}
+  renderCx();netUpd();return true})().finally(()=>{FLUSHING=null});
  return FLUSHING}
 window.addEventListener('online',()=>{netUpd();flush().then(ok=>{if(ok){status('✅ Conexão de volta – alterações enviadas');sync()}})});
 window.addEventListener('offline',netUpd);
-window.addEventListener('beforeunload',e=>{if(PEND.length){e.preventDefault();e.returnValue=''}});
 
 /* ---------- Taxas e cálculo do líquido ---------- */
 function pctOf(pag){const t=TAXAS.find(x=>norm(x.forma)===norm(pag));return t?+t.pct||0:0}
@@ -366,7 +417,7 @@ function merge(){ALL=AGENDA.filter(a=>FINAL(a.st)).map(a=>{const v=numBR(a.v),de
  return{d:a.d,ds:a.d.toLocaleDateString('pt-BR'),cli:a.cli,proc:a.proc||'—',procs:splitP(a.proc),pag:a.pag||'—',v,de,pa,tx,liq:r2(Math.max(0,v-de-pa-tx))}}).sort((a,b)=>a.d-b.d)}
 function splitLiq(r){const l=r.procs.length?r.procs:['—'];if(l.length===1)return[[l[0],r.liq]];
  const w=l.map(p=>priceAt(p,r.d)||0),tot=w.reduce((a,b)=>a+b,0);return l.map((p,i)=>[p,tot?r.liq*w[i]/tot:r.liq/l.length])}
-function refreshFin(){merge();fillFilters();render()}
+function refreshFin(){merge();fillFilters();render();renderCx()}
 function opts(sel,vals,all){const cur=sel.value;sel.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option value="${esc(v[0])}">${esc(v[1])}</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur}
 const mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 function fillFilters(){const cy=new Date().getFullYear();const anos=[...new Set(ALL.map(r=>r.d.getFullYear()).concat([cy]))].sort((a,b)=>b-a);
@@ -414,17 +465,58 @@ function render(){if($('pFin').style.display==='none')return;const f=filt();cons
 $('fAno').addEventListener('change',()=>{fillFilters();render()});['fMes','fPag','fProc'].forEach(i=>$(i).addEventListener('change',render));$('fBusca').addEventListener('input',render);
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,200)});
 function eyeUpd(){$('btnEye').textContent=HIDE?'👁 Mostrar valores':'🙈 Ocultar valores';$('btnEye').setAttribute('aria-pressed',String(HIDE))}
-$('btnEye').addEventListener('click',()=>{HIDE=!HIDE;STORE.set('dashHide',HIDE?'1':'0');eyeUpd();render()});eyeUpd();
+$('btnEye').addEventListener('click',()=>{HIDE=!HIDE;STORE.set('dashHide',HIDE?'1':'0');eyeUpd();render();renderCx()});eyeUpd();
 $('btnCsv').addEventListener('click',()=>{const n=v=>String(v).replace('.',',');const c='Dia;Cliente;Procedimentos;Pagamento;Valor;Desconto;Pago antes;Taxa;Liquido\n'+filt().map(r=>[r.ds,r.cli,r.proc,r.pag,n(r.v),n(r.de),n(r.pa),n(r.tx),n(r.liq)].join(';')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv'}));a.download='atendimentos.csv';a.click()});
+
+/* ---------- Caixa ---------- */
+/* Saldo = entradas (líquido dos atendimentos finalizados, exceto permuta) − saídas ± ajustes de saldo */
+const IS_SAIDA=m=>norm(m.tp)!=='ajuste';
+const entradas=()=>ALL.filter(r=>norm(r.pag)!=='permuta');
+function saldoAtual(){const e=entradas().reduce((a,r)=>a+r.liq,0);let s=0,aj=0;MOVS.forEach(m=>{if(IS_SAIDA(m))s+=Math.abs(m.v);else aj+=m.v});return r2(e-s+aj)}
+let SXEDIT=null;
+function cxMesOpts(){const cur=$('cxMes').value,t=mk(today());const ms=[...new Set(MOVS.map(m=>mk(m.d)).concat(entradas().map(r=>mk(r.d))).concat([t]))].sort().reverse();
+ $('cxMes').innerHTML=ms.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`).join('')+'<option value="">Todos</option>';
+ $('cxMes').value=[...$('cxMes').options].some(o=>o.value===cur)&&$('cxMes').dataset.init?cur:t;$('cxMes').dataset.init='1'}
+function renderCx(){if(!$('cxVal'))return;const sal=saldoAtual();
+ $('cxVal').textContent=money(sal);$('cxSaldo').classList.toggle('negat',sal<0);
+ const lastAj=MOVS.filter(m=>!IS_SAIDA(m)).sort((a,b)=>b.d-a.d)[0];
+ $('cxInfo').textContent='Entradas dos atendimentos (líquido) − saídas'+(lastAj?' · último ajuste em '+lastAj.d.toLocaleDateString('pt-BR'):'');
+ cxMesOpts();const m=$('cxMes').value,inM=d=>!m||mk(d)===m;
+ const ent=entradas().filter(r=>inM(r.d)).reduce((a,r)=>a+r.liq,0),sai=MOVS.filter(x=>IS_SAIDA(x)&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0);
+ $('kCx').innerHTML=[['⬆ Entradas'+(m?' no mês':''),money(ent)],['⬇ Saídas'+(m?' no mês':''),money(sai)],['= Resultado',money(ent-sai)]].map(k=>`<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b></div>`).join('');
+ const l=MOVS.filter(x=>inM(x.d)).sort((a,b)=>b.d-a.d);
+ $('mvList').innerHTML=l.length?l.map(x=>{const s=IS_SAIDA(x);return `<div class="mv" data-id="${esc(x.id)}"><span class="dt">${x.d.toLocaleDateString('pt-BR').slice(0,5)}</span>
+  <span><b>${esc(x.desc)||(s?'Saída':'Ajuste de saldo')}</b>${isPend('m:'+x.id)?' <span class="pill pend">📴 não enviado</span>':''}<br><small style="color:#8a6a50">${s?esc(x.cat)+(x.fp?' · '+esc(x.fp):''):'Ajuste de saldo'}</small></span>
+  <span class="vl ${s?'s':'a'}">${s?'− '+money(Math.abs(x.v)):(x.v<0?'− ':'+ ')+money(Math.abs(x.v))}</span>
+  ${s?`<button type="button" data-m="ed" aria-label="Editar saída" title="Editar">✏️</button>`:'<span></span>'}<button type="button" class="del" data-m="del" aria-label="Excluir" title="Excluir">🗑</button></div>`}).join('')
+  :'<p style="color:#999;font-size:13px">Nenhuma saída registrada neste período.</p>'}
+$('cxMes').addEventListener('change',renderCx);
+function cxSave(m,msg){MOVS=MOVS.filter(x=>x.id!==m.id);MOVS.push(m);saveMv();renderCx();$('sxMsg').textContent='⏳ Salvando...';
+ queue({t:'msave',m:{...m,d:iso(m.d)}}).then(ok=>{renderCx();$('sxMsg').textContent=ok?'✅ '+msg:'📴 Guardado no aparelho – envia quando a internet voltar';setTimeout(()=>$('sxMsg').textContent='',4000)})}
+function sxReset(){SXEDIT=null;$('fSx').reset();$('sxD').value=iso(today());$('sxTit').textContent='➖ Nova saída'}
+$('sxN').addEventListener('click',sxReset);
+$('fSx').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('sxD').value),v=numBR($('sxV').value),desc=$('sxDs').value.trim();
+ if(!d||!desc)return;if(!v){alert('Informe o valor da saída.');return}
+ const ed=!!SXEDIT;cxSave({id:SXEDIT||newId(),d,tp:'Saída',desc,cat:$('sxC').value,v,fp:$('sxF').value},ed?'Saída atualizada':'Saída registrada – descontada do saldo');sxReset()});
+$('mvList').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(!b)return;const id=b.closest('.mv').dataset.id,m=MOVS.find(x=>x.id===id);if(!m)return;
+ if(b.dataset.m==='ed'){SXEDIT=id;$('sxD').value=iso(m.d);$('sxV').value=vTxt(Math.abs(m.v));$('sxDs').value=m.desc;$('sxC').value=m.cat||'Outros';$('sxF').value=m.fp||'Dinheiro';
+  $('sxTit').textContent='✏️ Editar saída';$('fSx').scrollIntoView({behavior:'smooth',block:'center'})}
+ else{if(!confirm('Excluir este movimento? O saldo será recalculado.'))return;MOVS=MOVS.filter(x=>x.id!==id);saveMv();renderCx();
+  queue({t:'mdel',id}).then(ok=>status(ok?'🗑 Movimento excluído':'📴 Exclusão guardada no aparelho'))}});
+$('cxAjB').addEventListener('click',()=>{$('cxAj').classList.toggle('on');$('cxAjV').value=vTxt(Math.max(0,saldoAtual()));$('cxAjI').textContent='';setTimeout(()=>{$('cxAjV').focus();$('cxAjV').select()},50)});
+$('cxAjC').addEventListener('click',()=>$('cxAj').classList.remove('on'));
+$('cxAjV').addEventListener('input',()=>{const d=r2(numS($('cxAjV').value)-saldoAtual());$('cxAjI').textContent=d?`Será lançado um ajuste de ${d>0?'+':'−'} ${brl(Math.abs(d))}.`:'Sem diferença.'});
+$('cxAj').addEventListener('submit',e=>{e.preventDefault();const novo=numS($('cxAjV').value),dif=r2(novo-saldoAtual());
+ if(!dif){$('cxAj').classList.remove('on');return}
+ cxSave({id:newId(),d:today(),tp:'Ajuste',desc:$('cxAjM').value.trim()||'Ajuste de saldo (conferido '+brl(novo)+')',cat:'',v:dif,fp:''},'Saldo atualizado para '+brl(novo));
+ $('cxAj').classList.remove('on');$('cxAj').reset()});
 
 /* ---------- Agenda ---------- */
 let VM=today(),SEL=today(),EDIT=null;VM.setDate(1);
 const liqOf=a=>r2(Math.max(0,numBR(a.v)-numBR(a.de)-numBR(a.pa)-numBR(a.tx)));
 const waLink=a=>{const w=String(a.tel||'').replace(/\D/g,'').replace(/^55/,'');return w?` <a href="https://wa.me/55${w}" target="_blank" title="WhatsApp" aria-label="WhatsApp">💬</a>`:''};
 const pendPill=a=>isPend(a.id)?' <span class="pill pend" title="Guardado no aparelho, aguardando internet">📴 não enviado</span>':'';
-
-/* linha do dia: hora | cliente | ✓ | ✗ | ✏️ */
 function lnHtml(a){const fin=FINAL(a.st),fal=FALTA(a.st),can=CANC(a.st),cl=fin||fal||can,ab=ABERTA(a);
  const sub=[esc(a.proc)||'—',
   fin?`<b style="color:var(--gr)">${brl(liqOf(a))}</b>${a.pag?' · '+esc(a.pag):''}`:'',
@@ -449,7 +541,6 @@ $('popB').addEventListener('click',dayClick);$('dList').addEventListener('click'
 function daySave(reg,txt){AGENDA=AGENDA.filter(a=>a.id!==reg.id);AGENDA.push(reg);saveAg();status('⏳ Salvando na planilha...');
  const p=queue({t:'save',a:{...reg,d:iso(reg.d)}});renderAg();refreshFin();renderPop();
  p.then(ok=>{status(ok?'✅ '+txt:'📴 Guardado no aparelho: '+txt);renderAg();renderPop()})}
-
 function renderAbertas(){const l=AGENDA.filter(ABERTA).sort(byHora);
  $('abCard').style.display=l.length?'':'none';$('abN').textContent=l.length;let h='',last='';
  l.forEach(a=>{const k=iso(a.d);if(k!==last){h+=`<div class="abD">${a.d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})}</div>`;last=k}
@@ -457,7 +548,6 @@ function renderAbertas(){const l=AGENDA.filter(ABERTA).sort(byHora);
  $('abList').innerHTML=h;return l.length}
 $('abList').addEventListener('click',e=>{const i=e.target.closest('.abI');if(i)pickDay(i.dataset.k)});
 $('abList').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const i=e.target.closest('.abI');if(i)pickDay(i.dataset.k)});
-
 function proxDia(){const t=today(),f=AGENDA.filter(a=>a.d>t&&!CANC(a.st));if(!f.length)return{d:null,l:[]};
  const d=new Date(Math.min(...f.map(a=>+a.d)));return{d,l:f.filter(a=>key(a.d)===key(d)).sort(byHora)}}
 function renderAg(){const t=today(),by={};AGENDA.forEach(a=>(by[key(a.d)]=by[key(a.d)]||[]).push(a));
@@ -530,7 +620,6 @@ function closeAg(){$('agM').classList.remove('on');resetForm()}
 $('agX').addEventListener('click',closeAg);$('okFim').addEventListener('click',closeAg);
 $('agM').addEventListener('click',e=>{if(e.target===$('agM')&&$('agOk').style.display!=='none')closeAg()});
 $('okOutro').addEventListener('click',()=>{const d=formDate();resetForm(d);agForm(true);setTimeout(()=>$('aH').focus(),80)});
-
 function pickDay(k){SEL=toDate(k);VM=new Date(SEL);VM.setDate(1);renderAg();openPop()}
 $('cal').addEventListener('click',e=>{const c=e.target.closest('.c');if(c)pickDay(c.dataset.k)});
 $('cal').addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('.c');if(c){e.preventDefault();pickDay(c.dataset.k)}});
@@ -538,8 +627,7 @@ $('mPrev').addEventListener('click',()=>{VM.setMonth(VM.getMonth()-1);renderAg()
 $('mNext').addEventListener('click',()=>{VM.setMonth(VM.getMonth()+1);renderAg()});
 $('mHoje').addEventListener('click',()=>{VM=today();VM.setDate(1);SEL=today();renderAg()});
 
-/* ---------- Comunicação com a planilha ---------- */
-/* API: site no GitHub Pages -> Apps Script (/exec), protegido por senha */
+/* ---------- API: site no GitHub Pages -> Apps Script (/exec), protegido por senha ---------- */
 const CFG={get url(){return STORE.get('apiUrl')||''},get key(){return STORE.get('apiKey')||''}};
 function GS(fn,...args){return new Promise((ok,er)=>{
  if(!CFG.url||!CFG.key){const e=new Error('Acesso não configurado');e.auth=true;er(e);return}
@@ -558,11 +646,12 @@ $('suF').addEventListener('submit',async e=>{e.preventDefault();const u=$('suU')
  try{await GS('ping');$('setup').classList.remove('on');$('suK').value='';sync(true)}
  catch(err){if(!err.auth){STORE.set('apiUrl',oldU);STORE.set('apiKey',oldK)}$('suM').innerHTML='<span style="color:var(--rd)">⚠ '+esc(err.message||err)+'</span>'}});
 const agFromServer=l=>(l||[]).map(a=>({...a,ses:+a.ses||0,tot:+a.tot||0,d:toDate(a.d)})).filter(a=>a.d);
+const mvFromServer=l=>(l||[]).map(m=>({...m,v:+m.v||0,d:toDate(m.d)})).filter(m=>m.d);
 const prFromServer=l=>(l||[]).map(p=>({id:p.id,proc:p.proc,v:p.v,ativo:p.ativo,d:toDate(p.desde)})).filter(p=>p.d);
 const blankPay={v:0,de:0,pa:0,tx:0,pag:''};
 
 $('fAg').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('aD').value);if(!d)return;
- const reg={id:EDIT||Date.now().toString(36)+Math.random().toString(36).slice(2,6),d,h:$('aH').value,cli:$('aC').value.trim(),proc:joinP(getProcs()),tel:$('aT').value.trim(),st:$('aS').value,obs:$('aO').value.trim(),
+ const reg={id:EDIT||newId(),d,h:$('aH').value,cli:$('aC').value.trim(),proc:joinP(getProcs()),tel:$('aT').value.trim(),st:$('aS').value,obs:$('aO').value.trim(),
   ses:intIn($('aSes').value),tot:intIn($('aTot').value),...blankPay};
  if(!reg.cli)return;
  if(reg.ses&&reg.tot&&reg.ses>reg.tot&&!confirm(`A sessão (${reg.ses}) é maior que o total (${reg.tot}). Salvar mesmo assim?`))return;
@@ -577,7 +666,7 @@ $('fAg').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('aD')
   $('okS').textContent='⏳ Salvando na planilha...';agForm(false);EDIT=null}
  p.then(ok=>{renderAg();
   if(eraEdit)status(ok?'✅ Agendamento atualizado':'📴 Alteração guardada no aparelho');
-  else $('okS').textContent=ok?'✓ Salvo na planilha':'📴 Sem internet – guardado no aparelho. Será enviado sozinho quando a conexão voltar.'})});
+  else $('okS').textContent=ok?'✓ Salvo na planilha':'📴 Sem internet – guardado no aparelho. Será enviado quando a conexão voltar.'})});
 $('aDel').addEventListener('click',()=>{if(!EDIT||!confirm('Excluir este agendamento?'))return;const id=EDIT;
  AGENDA=AGENDA.filter(a=>a.id!==id);saveAg();closeAg();renderAg();refreshFin();status('⏳ Excluindo...');
  queue({t:'del',id}).then(ok=>status(ok?'🗑 Agendamento excluído':'📴 Exclusão guardada no aparelho'))});
@@ -597,7 +686,7 @@ $('btnNovo').addEventListener('click',()=>openAg(null,SEL));
 $('fab').addEventListener('click',()=>openAg(null,SEL));
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('agM').classList.contains('on'))closeAg();else if(POPOPEN)closePop()});
 
-/* ---------- Taxas (edição – precisa de internet) ---------- */
+/* ---------- Taxas (precisa de internet) ---------- */
 function renderTx(){$('txList').innerHTML=TAXAS.map((t,i)=>`<div class="txr" data-i="${i}"><input class="tF" value="${esc(t.forma)}" aria-label="Forma de pagamento"><input class="tP" inputmode="decimal" value="${String(t.pct).replace('.',',')}" aria-label="Taxa %"><button type="button" class="sec" data-tdel="${i}" aria-label="Remover" style="padding:4px">✕</button></div>`).join('')}
 function readTx(){return[...$('txList').querySelectorAll('.txr')].map(r=>({forma:r.querySelector('.tF').value.trim(),pct:Math.min(100,numBR(r.querySelector('.tP').value))})).filter(t=>t.forma)}
 $('txList').addEventListener('click',e=>{const b=e.target.closest('[data-tdel]');if(!b)return;TAXAS=readTx();TAXAS.splice(+b.dataset.tdel,1);renderTx()});
@@ -644,7 +733,7 @@ $('fPr').addEventListener('submit',e=>{e.preventDefault();const proc=$('pfP').va
  if(n&&!confirm(`${n} atendimento(s) finalizado(s) com "${proc}" a partir de ${d.toLocaleDateString('pt-BR')} serão atualizados para o novo valor.\n(Desconto e "pago antes" são mantidos; a taxa é recalculada.) Confirmar?`))return;
  prMsg('⏳ Salvando...');
  const go=()=>GS('salvarPreco',{proc,v,desde:iso(d),aplicar:ap}).then(r=>{afterPr(r);prReset();prMsg(`✅ Salvo${r.n?' · '+r.n+' atendimento(s) atualizado(s) no Financeiro':''}`)});
- (PEND.length?flush():Promise.resolve(true)).then(ok=>{if(!ok)throw new Error('há alterações da agenda aguardando internet');return go()}).catch(err=>{prMsg('');errNet(err)})});
+ (PEND.length?flush():Promise.resolve(true)).then(ok=>{if(!ok)throw new Error('há alterações aguardando internet');return go()}).catch(err=>{prMsg('');errNet(err)})});
 
 /* ---------- Sincronização ---------- */
 let BUSY=false;
@@ -654,7 +743,9 @@ async function sync(manual){if(BUSY)return;BUSY=true;if(manual)status('🔄 Atua
   const r=await GS('carregar');
   if(r.taxas&&r.taxas.length){TAXAS=r.taxas;saveTx();renderTx()}
   if(r.precos&&r.precos.length){PRECOS=prFromServer(r.precos);savePr();fillProcs();renderPr()}
-  AGENDA=applyPend(agFromServer(r.ag));saveAg();refreshFin();renderAg();renderPop();fillCli();
+  AGENDA=applyPend(agFromServer(r.ag));saveAg();
+  MOVS=applyPendM(mvFromServer(r.movs));saveMv();
+  refreshFin();renderAg();renderPop();fillCli();
   const nAb=AGENDA.filter(ABERTA).length;
   status(`✅ ${AGENDA.length} na agenda${nAb?' · ⚠ '+nAb+' comanda(s) em aberto':''} · ${r.atualizado}`)}
  catch(e){if(e&&e.auth){status('🔐 Informe a senha');return}status(isNetErr(e)?'📴 Sem internet – usando os dados guardados no aparelho':'⚠ Não consegui ler a planilha: '+(e&&e.message||e))}
@@ -662,23 +753,25 @@ async function sync(manual){if(BUSY)return;BUSY=true;if(manual)status('🔄 Atua
 $('btnRef').addEventListener('click',()=>sync(true));
 
 /* ---------- Abas ---------- */
-const PANES={age:'pAge',fin:'pFin',proc:'pProc'};
+const PANES={age:'pAge',fin:'pFin',cx:'pCx',proc:'pProc'};
 function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
  Object.entries(PANES).forEach(([k,id])=>$(id).style.display=k===t?'':'none');
  $('fab').classList.toggle('vis',t==='age');
- ['filtros','btnFil','btnCsv','btnEye'].forEach(i=>$(i).style.display=t==='fin'?'':'none');
- if(t==='fin')render();if(t==='age')renderAg();if(t==='proc'){renderPr();renderTx()}window.scrollTo(0,0)}
+ ['filtros','btnFil','btnCsv'].forEach(i=>$(i).style.display=t==='fin'?'':'none');
+ $('btnEye').style.display=t==='fin'||t==='cx'?'':'none';
+ if(t==='fin')render();if(t==='age')renderAg();if(t==='cx')renderCx();if(t==='proc'){renderPr();renderTx()}window.scrollTo(0,0)}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
 $('btnFil').addEventListener('click',()=>$('filtros').classList.toggle('on'));
 
 $('acTroca').addEventListener('click',()=>showSetup(''));
 $('acSair').addEventListener('click',()=>{if(PEND.length&&!confirm('Há '+PEND.length+' alteração(ões) ainda não enviadas. Se sair, elas serão perdidas. Sair mesmo assim?'))return;
  if(!confirm('Sair deste aparelho? A senha e os dados guardados aqui serão apagados.'))return;
- ['apiKey','dashAg','dashPend','dashPr','dashTx'].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.reload()});
+ ['apiKey','dashAg','dashMv','dashPend','dashPr','dashTx'].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.reload()});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
 /* ---------- Início ---------- */
-AGENDA=applyPend(AGENDA);
-resetForm();fillProcs();merge();fillFilters();renderAg();fillCli();prReset();renderPr();renderTx();showTab('age');netUpd();
+AGENDA=applyPend(AGENDA);MOVS=applyPendM(MOVS);
+resetForm();sxReset();fillProcs();merge();fillFilters();renderAg();fillCli();prReset();renderPr();renderTx();renderCx();showTab('age');netUpd();
 if(AGENDA.length){$('load').style.display='none';status('⏳ Mostrando últimos dados, buscando atualização...')}
 const T0=Date.now(),tick=setInterval(()=>{if($('load').style.display==='none'){clearInterval(tick);return}
  const s=Math.round((Date.now()-T0)/1000);$('loadT').textContent=s+'s'+(s>40?' – está demorando demais. Verifique a internet ou me mande um print.':'')},1000);
