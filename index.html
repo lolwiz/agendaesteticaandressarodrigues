@@ -17,6 +17,7 @@ header h1{margin:0;font-size:20px}header small{opacity:.9}
 .wrap{max-width:1300px;margin:auto;padding:14px}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:10px;border-radius:12px;box-shadow:0 2px 8px #0001;margin-bottom:14px}
 select,input,button,textarea{padding:8px 10px;border:1px solid #e3c2a3;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--tx)}
+input[readonly]{background:#f4efe9;color:#5a2d0c;font-weight:600}
 button{background:var(--or);color:#fff;border:none;cursor:pointer;font-weight:600}button.sec{background:#fff;color:var(--or);border:1px solid var(--or)}
 button:focus-visible,input:focus-visible,select:focus-visible,.cal .c:focus-visible{outline:2px solid var(--dk);outline-offset:1px}
 #logo{height:84px;width:84px;object-fit:contain;border-radius:50%;flex:0 0 auto}
@@ -72,7 +73,8 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 /* pagamento */
 .payb{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#fff4ea;border:1px dashed var(--or);border-radius:8px;padding:8px}
 .payb label{font-size:12px;color:#8a6a50;display:flex;flex-direction:column;gap:3px}.payb .full{grid-column:1/-1}.payb input,.payb select{width:100%}
-.res{font-size:13px;line-height:1.5;background:#fff;border-radius:6px;padding:6px 8px}.res b{color:var(--gr)}.res .tx{color:var(--rd)}
+.pgr{display:grid;grid-template-columns:minmax(0,1fr) 100px 34px;gap:6px;align-items:center;margin-bottom:5px}.pgr select,.pgr input{width:100%;min-width:0}.pgr button{padding:4px}
+.res{font-size:13px;line-height:1.5;background:#fff;border-radius:6px;padding:6px 8px}.res b{color:var(--gr)}.res .tx{color:var(--rd)}.res .warn{color:var(--rd);font-weight:700}
 .bOk{background:var(--gr)}
 /* caixa */
 .cxg{display:grid;grid-template-columns:1fr 1.4fr;gap:14px}@media(max-width:900px){.cxg{grid-template-columns:1fr}}
@@ -123,6 +125,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
  .fm input,.fm select,.fm textarea,.payb input,.payb select,.prow select{min-height:42px;font-size:16px}
  button{min-height:40px}.it{padding:10px 6px}
  .ln{grid-template-columns:44px minmax(0,1fr) 38px 38px 38px;gap:4px;padding:8px 2px}.ic{width:38px;height:38px}
+ .pgr{grid-template-columns:minmax(0,1fr) 92px 38px}
  #cxVal{font-size:28px}
 }
 </style></head><body>
@@ -235,7 +238,8 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
    </div>
    <div class="card" style="margin-bottom:14px"><h3>🔐 Acesso deste aparelho</h3>
     <p style="font-size:12px;color:#8a6a50;margin:0 0 8px">Use para trocar a senha ou o link da API. "Sair" apaga deste aparelho a senha e os dados guardados.</p>
-    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="sec" id="acTroca">🔑 Trocar senha / link</button><button type="button" class="sec" id="acSair" style="color:var(--rd);border-color:var(--rd)">🚪 Sair deste aparelho</button></div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="sec" id="acTroca">🔑 Trocar senha / link</button><button type="button" class="sec" id="acSair" style="color:var(--rd);border-color:var(--rd)">🚪 Sair deste aparelho</button></div>
+    <p id="acInfo" style="font-size:11px;color:#8a6a50;margin:8px 0 0"></p></div>
    <div class="card"><h3>💳 Taxas da maquininha</h3>
     <p style="font-size:12px;color:#8a6a50;margin:0 0 8px">Percentual descontado em cada forma de pagamento. Vale para os próximos lançamentos.</p>
     <div class="txr rwH"><span>Forma de pagamento</span><span>Taxa %</span><span></span></div>
@@ -304,6 +308,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 <script>
 window.onerror=function(m,s,l){var d=document.getElementById('load');if(d){d.style.display='flex';d.innerHTML='⚠ Erro: '+m+' (linha '+l+')<br><small>Mande um print deste erro.</small>';}};
 var STORE={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const SITE_VERSAO=17;
 
 const $=id=>document.getElementById(id);
 const brl=v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -338,6 +343,14 @@ const sesPill=a=>{const t=sesTxt(a);return t?` <span class="pill ses">${t}${a.to
 const byHora=(a,b)=>a.d-b.d||String(a.h).localeCompare(String(b.h));
 const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
+/* divisão do pagamento: guardado como "Pix:50|Crédito 2x:100" */
+function parsePags(a){const s=String(a.pgs||'').trim();
+ if(s)return s.split('|').map(x=>{const i=x.lastIndexOf(':');return{f:x.slice(0,i).trim(),v:numBR(x.slice(i+1))}}).filter(p=>p.f);
+ const cobr=r2(Math.max(0,numBR(a.v)-numBR(a.de)-numBR(a.pa)));if(!cobr||!a.pag||a.pag===PAGO_ANTES)return[];return[{f:a.pag,v:cobr}]}
+const pgsStr=l=>l.map(p=>String(p.f).replace(/[|:]/g,' ')+':'+r2(p.v)).join('|');
+const pagTxt=l=>l.length?[...new Set(l.map(p=>p.f))].join(' + '):PAGO_ANTES;
+const pagDet=l=>l.length>1?l.map(p=>esc(p.f)+' '+brl(p.v)).join(' + '):l.length?esc(l[0].f):PAGO_ANTES;
+
 function fromCache(k,fn){try{return (JSON.parse(STORE.get(k)||'[]')||[]).map(fn).filter(x=>x.d)}catch(e){return[]}}
 let AGENDA=fromCache('dashAg',a=>({...a,d:toDate(a.d)}));
 let MOVS=fromCache('dashMv',m=>({...m,d:toDate(m.d)}));
@@ -351,16 +364,18 @@ const saveTx=()=>STORE.set('dashTx',JSON.stringify(TAXAS));
 
 /* ---------- Fila offline (agenda e caixa) ---------- */
 let PEND=(()=>{try{const p=JSON.parse(STORE.get('dashPend')||'[]');return Array.isArray(p)?p:[]}catch(e){return[]}})();
+let FLUSHERR='',VERWARN='',LASTSYNC=+(STORE.get('dashLast')||0);
 const savePend=()=>STORE.set('dashPend',JSON.stringify(PEND));
 const opId=op=>op.t==='save'?op.a.id:op.t==='del'?op.id:op.t==='msave'?'m:'+op.m.id:'m:'+op.id;
 const isPend=id=>PEND.some(p=>opId(p)===id);
 function applyPend(list){PEND.forEach(op=>{if(op.t==='save'){const a={...op.a,d:toDate(op.a.d)};list=list.filter(x=>x.id!==a.id);list.push(a)}else if(op.t==='del')list=list.filter(x=>x.id!==op.id)});return list}
 function applyPendM(list){PEND.forEach(op=>{if(op.t==='msave'){const m={...op.m,d:toDate(op.m.d)};list=list.filter(x=>x.id!==m.id);list.push(m)}else if(op.t==='mdel')list=list.filter(x=>x.id!==op.id)});return list}
 function netUpd(){const n=PEND.length,off=navigator.onLine===false,b=$('offBar');
- if(!n&&!off){b.style.display='none';return}
+ if(!n&&!off&&!FLUSHERR&&!VERWARN){b.style.display='none';return}
  b.style.display='';
- b.innerHTML=(off?'📴 <b>Sem internet.</b> Você pode continuar usando a agenda e o caixa normalmente. ':'⏳ ')+
-  (n?`<b>${n}</b> alteração(ões) guardada(s) neste aparelho – serão enviadas para a planilha quando a conexão voltar.`:'As alterações ficarão guardadas neste aparelho.')}
+ b.innerHTML=(VERWARN?`<b style="color:var(--rd)">⚠ ${esc(VERWARN)}</b><br>`:'')+(FLUSHERR?`<b style="color:var(--rd)">⚠ ${esc(FLUSHERR)}</b><br>`:'')+
+  (off?'📴 <b>Sem internet.</b> Você pode continuar usando a agenda e o caixa normalmente. ':'')+
+  (n?`⏳ <b>${n}</b> alteração(ões) guardada(s) neste aparelho – ainda <b>não aparecem nos outros aparelhos</b>. Serão enviadas assim que possível.`:'')}
 function queue(op){PEND=PEND.filter(p=>opId(p)!==opId(op));PEND.push(op);savePend();netUpd();return flush()}
 let FLUSHING=null;
 function flush(){if(FLUSHING)return FLUSHING;if(!PEND.length){netUpd();return Promise.resolve(true)}
@@ -368,40 +383,64 @@ function flush(){if(FLUSHING)return FLUSHING;if(!PEND.length){netUpd();return Pr
   while(PEND.length){const op=PEND[0];
    try{if(op.t==='save')lastA=await GS('salvarAg',op.a);else if(op.t==='del')lastA=await GS('excluirAg',op.id);
     else if(op.t==='msave')lastM=await GS('salvarMov',op.m);else lastM=await GS('excluirMov',op.id)}
-   catch(e){netUpd();return false}
+   catch(e){if(!isNetErr(e)&&!(e&&e.auth))FLUSHERR='A planilha recusou uma alteração ('+(e&&e.message||e)+'). Confira se o Código.gs mais recente foi colado no Apps Script e publicado como "Nova versão".';
+    netUpd();return false}
    PEND=PEND.filter(p=>p!==op);savePend()}
+  FLUSHERR='';
   if(lastA){AGENDA=applyPend(agFromServer(lastA));saveAg();renderAg();refreshFin();renderPop();fillCli()}
   if(lastM){MOVS=applyPendM(mvFromServer(lastM));saveMv()}
   renderCx();netUpd();return true})().finally(()=>{FLUSHING=null});
  return FLUSHING}
-window.addEventListener('online',()=>{netUpd();flush().then(ok=>{if(ok){status('✅ Conexão de volta – alterações enviadas');sync()}})});
+window.addEventListener('online',()=>{netUpd();sync()});
 window.addEventListener('offline',netUpd);
 
-/* ---------- Taxas e cálculo do líquido ---------- */
+/* ---------- Taxas e cálculo do líquido (com várias formas de pagamento) ---------- */
 function pctOf(pag){const t=TAXAS.find(x=>norm(x.forma)===norm(pag));return t?+t.pct||0:0}
-function calc(v,de,pa,pag){v=numBR(v);de=Math.min(numBR(de),v);const sub=r2(v-de);pa=Math.min(numBR(pa),sub);const cobr=r2(sub-pa);
- const pct=cobr>0?pctOf(pag):0;const tx=r2(cobr*pct/100);return{v,de,pa,sub,cobr,pct,tx,liq:r2(cobr-tx)}}
+/* rows: [{f,v}] – a última linha recebe automaticamente o restante */
+function calcPay(v,de,pa,rows){v=numBR(v);de=Math.min(numBR(de),v);const sub=r2(v-de);pa=Math.min(numBR(pa),sub);const cobr=r2(sub-pa);
+ let pgs=[],bad=false;
+ if(cobr>0){let soma=0;pgs=rows.map((r,i)=>{if(i===rows.length-1){const rest=r2(cobr-soma);if(rest<0)bad=true;return{f:r.f,v:Math.max(0,rest)}}const x=r2(numBR(r.v));soma+=x;return{f:r.f,v:x}});
+  pgs=pgs.filter((p,i)=>p.v>0||i===pgs.length-1)}
+ const tx=r2(pgs.reduce((s,p)=>s+p.v*pctOf(p.f)/100,0));
+ return{v,de,pa,sub,cobr,pgs,tx,liq:r2(cobr-tx),bad}}
 function pagOpts(sel){const l=TAXAS.map(t=>t.forma);if(sel&&!l.some(x=>norm(x)===norm(sel))&&sel!==PAGO_ANTES)l.push(sel);
  return l.map(f=>`<option value="${esc(f)}" ${norm(f)===norm(sel)?'selected':''}>${esc(f)}${pctOf(f)?` (${String(pctOf(f)).replace('.',',')}%)`:''}</option>`).join('')}
-function payHtml(a,dflt){const pa=numBR(a.pa);
- return `<div class="payb">
+function payHtml(a,dflt){const pa=numBR(a.pa),rows=a.v||a.pa?parsePags(a):[];
+ return `<div class="payb" data-pgs="${esc(JSON.stringify(rows))}">
   <span class="full" style="font-size:12px;font-weight:600">💰 Pagamento deste atendimento</span>
   <label>Valor (R$)<input class="pV" inputmode="decimal" value="${a.v?vTxt(a.v):vTxt(dflt)}"></label>
   <label>Desconto (R$)<input class="pDe" inputmode="decimal" value="${vTxt(a.de)}" placeholder="0,00"></label>
   <label class="full chk"><input type="checkbox" class="pPaC" ${pa?'checked':''}> Cliente já pagou anteriormente (pacote / sinal)</label>
   <label class="full pPaW" style="${pa?'':'display:none'}">Valor já pago antes (R$)<input class="pPa" inputmode="decimal" value="${vTxt(pa)}"></label>
-  <label class="full pPgW">Forma de pagamento<select class="pPg">${pagOpts(a.pag&&a.pag!==PAGO_ANTES?a.pag:'Pix')}</select></label>
+  <div class="full pPgW"><span class="plbl">Forma(s) de pagamento</span><div class="pgs"></div>
+   <button type="button" class="sec pgAdd" style="padding:6px 10px;font-size:13px">➕ Outra forma de pagamento</button></div>
   <div class="full res" aria-live="polite"></div></div>`}
-function payBind(root){const q=c=>root.querySelector(c);
- const up=()=>{const pa=q('.pPaC').checked?q('.pPa').value:0;const c=calc(q('.pV').value,q('.pDe').value,pa,q('.pPg').value);
+function payBind(root){const q=c=>root.querySelector(c),box=q('.pgs');let init=[];try{init=JSON.parse(root.querySelector('.payb').dataset.pgs||'[]')}catch(_){}
+ const els=()=>[...box.querySelectorAll('.pgr')];
+ function addRow(f,v){const d=document.createElement('div');d.className='pgr';
+  d.innerHTML=`<select class="pgF" aria-label="Forma de pagamento">${pagOpts(f||'Pix')}</select><input class="pgV" inputmode="decimal" aria-label="Valor nesta forma" placeholder="R$" value="${v!=null&&v!==''?vTxt(v):''}"><button type="button" class="sec pgDel" aria-label="Remover forma de pagamento">✕</button>`;box.appendChild(d)}
+ (init.length?init:[{f:'Pix'}]).forEach(r=>addRow(r.f,r.v));
+ const rowsIn=()=>els().map(el=>({f:el.querySelector('.pgF').value,v:el.querySelector('.pgV').value}));
+ const up=()=>{const pa=q('.pPaC').checked?q('.pPa').value:0;const c=calcPay(q('.pV').value,q('.pDe').value,pa,rowsIn());
   q('.pPaW').style.display=q('.pPaC').checked?'':'none';q('.pPgW').style.display=c.cobr>0?'':'none';
-  q('.res').innerHTML=(c.de?`Desconto: −${brl(c.de)}<br>`:'')+(c.pa?`Já pago antes: −${brl(c.pa)}<br>`:'')+
-   (c.cobr>0?`Cobrado agora: ${brl(c.cobr)}<br>`+(c.tx?`<span class="tx">Taxa maquininha (${String(c.pct).replace('.',',')}%): −${brl(c.tx)}</span><br>`:''):'Nada a cobrar agora.<br>')+
-   `<b>Líquido: ${brl(c.liq)}</b>`};
- q('.pPaC').addEventListener('change',()=>{if(q('.pPaC').checked&&!q('.pPa').value){const c=calc(q('.pV').value,q('.pDe').value,0,'');q('.pPa').value=vTxt(c.sub)}up()});
- root.querySelectorAll('.pV,.pDe,.pPa,.pPg').forEach(i=>{i.addEventListener('input',up);i.addEventListener('change',up)});up();return up}
-function payRead(root){const q=c=>root.querySelector(c);const pa=q('.pPaC').checked?q('.pPa').value:0;const c=calc(q('.pV').value,q('.pDe').value,pa,q('.pPg').value);
- return{v:c.v,de:c.de,pa:c.pa,tx:c.tx,pag:c.cobr>0?q('.pPg').value:PAGO_ANTES}}
+  const e=els();e.forEach((el,i)=>{const inp=el.querySelector('.pgV'),last=i===e.length-1;inp.readOnly=last;
+   if(last){const soma=e.slice(0,-1).reduce((s,x)=>s+numBR(x.querySelector('.pgV').value),0);inp.value=vTxt(Math.max(0,r2(c.cobr-soma)))||'0';inp.title='Restante (automático)'}
+   el.querySelector('.pgDel').style.visibility=e.length>1?'':'hidden'});
+  let h=(c.de?`Desconto: −${brl(c.de)}<br>`:'')+(c.pa?`Já pago antes: −${brl(c.pa)}<br>`:'');
+  if(c.cobr>0){h+=`Cobrado agora: ${brl(c.cobr)}<br>`;if(c.pgs.length>1)h+=c.pgs.map(p=>`&nbsp;· ${esc(p.f)}: ${brl(p.v)}`).join('<br>')+'<br>';
+   c.pgs.forEach(p=>{const t=r2(p.v*pctOf(p.f)/100);if(t)h+=`<span class="tx">Taxa ${esc(p.f)} (${String(pctOf(p.f)).replace('.',',')}%): −${brl(t)}</span><br>`})}
+  else h+='Nada a cobrar agora.<br>';
+  if(c.bad)h+='<span class="warn">⚠ A soma das formas passou do valor cobrado.</span><br>';
+  q('.res').innerHTML=h+`<b>Líquido: ${brl(c.liq)}</b>`;return c};
+ q('.pPaC').addEventListener('change',()=>{if(q('.pPaC').checked&&!q('.pPa').value){const c=calcPay(q('.pV').value,q('.pDe').value,0,[]);q('.pPa').value=vTxt(c.sub)}up()});
+ root.querySelectorAll('.pV,.pDe,.pPa').forEach(i=>i.addEventListener('input',up));
+ box.addEventListener('input',up);box.addEventListener('change',up);
+ box.addEventListener('click',e=>{const b=e.target.closest('.pgDel');if(!b)return;b.closest('.pgr').remove();up()});
+ q('.pgAdd').addEventListener('click',()=>{const e=els(),last=e[e.length-1];if(last)last.querySelector('.pgV').value='';
+  addRow('Crédito 1x','');up();if(last){const i=last.querySelector('.pgV');i.focus()}});
+ root._pay=()=>{const pa=q('.pPaC').checked?q('.pPa').value:0;return calcPay(q('.pV').value,q('.pDe').value,pa,rowsIn())};
+ up();return up}
+function payRead(root){const c=root._pay();return{v:c.v,de:c.de,pa:c.pa,tx:c.tx,pag:pagTxt(c.pgs),pgs:pgsStr(c.pgs),bad:c.bad}}
 
 /* ---------- Tabela de preços ---------- */
 function priceAt(proc,d){const k=norm(proc);const l=PRECOS.filter(p=>norm(p.proc)===k).sort((a,b)=>a.d-b.d);if(!l.length)return null;
@@ -413,8 +452,8 @@ function procList(){const m={};PRECOS.forEach(p=>{const k=norm(p.proc);(m[k]=m[k
 
 /* ---------- Financeiro (somente agenda finalizada) ---------- */
 let ALL=[];
-function merge(){ALL=AGENDA.filter(a=>FINAL(a.st)).map(a=>{const v=numBR(a.v),de=numBR(a.de),pa=numBR(a.pa),tx=numBR(a.tx);
- return{d:a.d,ds:a.d.toLocaleDateString('pt-BR'),cli:a.cli,proc:a.proc||'—',procs:splitP(a.proc),pag:a.pag||'—',v,de,pa,tx,liq:r2(Math.max(0,v-de-pa-tx))}}).sort((a,b)=>a.d-b.d)}
+function merge(){ALL=AGENDA.filter(a=>FINAL(a.st)).map(a=>{const v=numBR(a.v),de=numBR(a.de),pa=numBR(a.pa),tx=numBR(a.tx),pgs=parsePags(a);
+ return{d:a.d,ds:a.d.toLocaleDateString('pt-BR'),cli:a.cli,proc:a.proc||'—',procs:splitP(a.proc),pgs,forms:pgs.length?[...new Set(pgs.map(p=>p.f))]:[PAGO_ANTES],pag:pagTxt(pgs),v,de,pa,tx,liq:r2(Math.max(0,v-de-pa-tx))}}).sort((a,b)=>a.d-b.d)}
 function splitLiq(r){const l=r.procs.length?r.procs:['—'];if(l.length===1)return[[l[0],r.liq]];
  const w=l.map(p=>priceAt(p,r.d)||0),tot=w.reduce((a,b)=>a+b,0);return l.map((p,i)=>[p,tot?r.liq*w[i]/tot:r.liq/l.length])}
 function refreshFin(){merge();fillFilters();render();renderCx()}
@@ -425,10 +464,10 @@ function fillFilters(){const cy=new Date().getFullYear();const anos=[...new Set(
  $('fAno').value=$('fAno').dataset.init?(curA===''||anos.includes(+curA)?curA:String(cy)):String(cy);$('fAno').dataset.init='1';
  const y=$('fAno').value,ms=[...new Set(ALL.filter(r=>!y||r.d.getFullYear()==y).map(r=>mk(r.d)))].sort();
  opts($('fMes'),ms.map(m=>[m,MESES[+m.slice(5)-1]+(y?'':'/'+m.slice(0,4))]),'Todos');
- opts($('fPag'),[...new Set(ALL.map(r=>r.pag))].sort().map(p=>[p,p]),'Todos');
+ opts($('fPag'),[...new Set(ALL.flatMap(r=>r.forms))].sort().map(p=>[p,p]),'Todos');
  opts($('fProc'),[...new Set(ALL.flatMap(r=>r.procs))].sort().map(p=>[p,p]),'Todos')}
 function filt(){const y=$('fAno').value,m=$('fMes').value,p=$('fPag').value,pr=$('fProc').value,b=norm($('fBusca').value);
- return ALL.filter(r=>(!y||r.d.getFullYear()==y)&&(!m||mk(r.d)===m)&&(!p||r.pag===p)&&(!pr||r.procs.includes(pr))&&(!b||norm(r.cli).includes(b)))}
+ return ALL.filter(r=>(!y||r.d.getFullYear()==y)&&(!m||mk(r.d)===m)&&(!p||r.forms.includes(p))&&(!pr||r.procs.includes(pr))&&(!b||norm(r.cli).includes(b)))}
 const group=(arr,k,f=r=>r.liq)=>{const g={};arr.forEach(r=>{const x=k(r);g[x]=(g[x]||0)+f(r)});return g};
 const sorted=(g,n)=>Object.entries(g).sort((a,b)=>b[1]-a[1]).slice(0,n);
 function setup(cv){const dpr=window.devicePixelRatio||1,w=cv.clientWidth||300,h=cv.clientHeight||280;cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext('2d');x.scale(dpr,dpr);x.clearRect(0,0,w,h);x.font='11px Segoe UI,Roboto,Arial';return[x,w,h]}
@@ -455,35 +494,37 @@ function render(){if($('pFin').style.display==='none')return;const f=filt();cons
  const gd={};f.forEach(r=>{const k=iso(r.d);gd[k]=(gd[k]||0)+r.liq});const dk=Object.keys(gd).sort();
  bars($('cDia'),dk.map(d=>d.slice(8)+'/'+d.slice(5,7)),dk.map(d=>gd[d]));
  const gp={};f.forEach(r=>splitLiq(r).forEach(([p,v])=>gp[p]=(gp[p]||0)+v));const tp=sorted(gp,10);hbars($('cProc'),tp.map(t=>t[0]),tp.map(t=>t[1]));
- const pg=sorted(group(f,r=>r.pag,r=>r.v-r.de),8);donut($('cPag'),pg.map(t=>t[0]),pg.map(t=>t[1]));
+ const gf={};f.forEach(r=>{if(r.pgs.length)r.pgs.forEach(p=>gf[p.f]=(gf[p.f]||0)+p.v);else gf[PAGO_ANTES]=(gf[PAGO_ANTES]||0)+(r.v-r.de)});
+ const pg=sorted(gf,8);donut($('cPag'),pg.map(t=>t[0]),pg.map(t=>t[1]));
  const tc=sorted(group(f,r=>r.cli),10);hbars($('cCli'),tc.map(t=>t[0]),tc.map(t=>t[1]));
  const ano=+$('fAno').value||new Date().getFullYear();$('cMesT').textContent='Faturamento por mês ('+ano+')';
  const gm=group(ALL.filter(r=>r.d.getFullYear()===ano),r=>r.d.getMonth());bars($('cMes'),MESES,MESES.map((_,i)=>gm[i]||0),'#8B4513');
  const gs=group(f,r=>r.d.getDay()),DS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];bars($('cSem'),DS,DS.map((_,i)=>gs[i]||0),'#E67E22');
  $('nReg').textContent=f.length;
- $('tb').innerHTML=f.map(r=>`<tr><td>${r.ds}</td><td>${esc(r.cli)}</td><td>${esc(r.proc)}</td><td>${esc(r.pag)}</td><td>${money(r.v)}</td><td class="neg">${r.de||r.pa?money(r.de+r.pa):''}</td><td class="neg">${r.tx?money(r.tx):''}</td><td><b>${money(r.liq)}</b></td></tr>`).join('')}
+ $('tb').innerHTML=f.map(r=>`<tr><td>${r.ds}</td><td>${esc(r.cli)}</td><td>${esc(r.proc)}</td><td>${HIDE&&r.pgs.length>1?esc(r.pag):pagDet(r.pgs)}</td><td>${money(r.v)}</td><td class="neg">${r.de||r.pa?money(r.de+r.pa):''}</td><td class="neg">${r.tx?money(r.tx):''}</td><td><b>${money(r.liq)}</b></td></tr>`).join('')}
 $('fAno').addEventListener('change',()=>{fillFilters();render()});['fMes','fPag','fProc'].forEach(i=>$(i).addEventListener('change',render));$('fBusca').addEventListener('input',render);
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,200)});
 function eyeUpd(){$('btnEye').textContent=HIDE?'👁 Mostrar valores':'🙈 Ocultar valores';$('btnEye').setAttribute('aria-pressed',String(HIDE))}
 $('btnEye').addEventListener('click',()=>{HIDE=!HIDE;STORE.set('dashHide',HIDE?'1':'0');eyeUpd();render();renderCx()});eyeUpd();
-$('btnCsv').addEventListener('click',()=>{const n=v=>String(v).replace('.',',');const c='Dia;Cliente;Procedimentos;Pagamento;Valor;Desconto;Pago antes;Taxa;Liquido\n'+filt().map(r=>[r.ds,r.cli,r.proc,r.pag,n(r.v),n(r.de),n(r.pa),n(r.tx),n(r.liq)].join(';')).join('\n');
+$('btnCsv').addEventListener('click',()=>{const n=v=>String(r2(v)).replace('.',',');const c='Dia;Cliente;Procedimentos;Pagamento;Valor;Desconto;Pago antes;Taxa;Liquido\n'+filt().map(r=>[r.ds,r.cli,r.proc,r.pgs.length>1?r.pgs.map(p=>p.f+' '+n(p.v)).join(' + '):r.pag,n(r.v),n(r.de),n(r.pa),n(r.tx),n(r.liq)].join(';')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv'}));a.download='atendimentos.csv';a.click()});
 
 /* ---------- Caixa ---------- */
-/* Saldo = entradas (líquido dos atendimentos finalizados, exceto permuta) − saídas ± ajustes de saldo */
+/* Saldo = entradas (líquido dos atendimentos finalizados, sem a parte em permuta) − saídas ± ajustes de saldo */
 const IS_SAIDA=m=>norm(m.tp)!=='ajuste';
-const entradas=()=>ALL.filter(r=>norm(r.pag)!=='permuta');
-function saldoAtual(){const e=entradas().reduce((a,r)=>a+r.liq,0);let s=0,aj=0;MOVS.forEach(m=>{if(IS_SAIDA(m))s+=Math.abs(m.v);else aj+=m.v});return r2(e-s+aj)}
+const entVal=r=>r2(Math.max(0,r.liq-r.pgs.filter(p=>norm(p.f)==='permuta').reduce((s,p)=>s+p.v,0)));
+function saldoAtual(){const e=ALL.reduce((a,r)=>a+entVal(r),0);let s=0,aj=0;MOVS.forEach(m=>{if(IS_SAIDA(m))s+=Math.abs(m.v);else aj+=m.v});return r2(e-s+aj)}
 let SXEDIT=null;
-function cxMesOpts(){const cur=$('cxMes').value,t=mk(today());const ms=[...new Set(MOVS.map(m=>mk(m.d)).concat(entradas().map(r=>mk(r.d))).concat([t]))].sort().reverse();
+function cxMesOpts(){const cur=$('cxMes').value,t=mk(today());const ms=[...new Set(MOVS.map(m=>mk(m.d)).concat(ALL.map(r=>mk(r.d))).concat([t]))].sort().reverse();
  $('cxMes').innerHTML=ms.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`).join('')+'<option value="">Todos</option>';
  $('cxMes').value=[...$('cxMes').options].some(o=>o.value===cur)&&$('cxMes').dataset.init?cur:t;$('cxMes').dataset.init='1'}
 function renderCx(){if(!$('cxVal'))return;const sal=saldoAtual();
  $('cxVal').textContent=money(sal);$('cxSaldo').classList.toggle('negat',sal<0);
- const lastAj=MOVS.filter(m=>!IS_SAIDA(m)).sort((a,b)=>b.d-a.d)[0];
- $('cxInfo').textContent='Entradas dos atendimentos (líquido) − saídas'+(lastAj?' · último ajuste em '+lastAj.d.toLocaleDateString('pt-BR'):'');
+ const lastAj=MOVS.filter(m=>!IS_SAIDA(m)).sort((a,b)=>b.d-a.d)[0],pm=PEND.filter(p=>p.t==='msave'||p.t==='mdel').length;
+ $('cxInfo').innerHTML='Entradas dos atendimentos (líquido) − saídas'+(lastAj?' · último ajuste em '+lastAj.d.toLocaleDateString('pt-BR'):'')+
+  (pm?`<br><span style="color:#b9770e">⏳ ${pm} movimento(s) ainda não enviado(s) – os outros aparelhos ainda não veem.</span>`:LASTSYNC?`<br>Sincronizado às ${new Date(LASTSYNC).toLocaleTimeString('pt-BR').slice(0,5)}`:'');
  cxMesOpts();const m=$('cxMes').value,inM=d=>!m||mk(d)===m;
- const ent=entradas().filter(r=>inM(r.d)).reduce((a,r)=>a+r.liq,0),sai=MOVS.filter(x=>IS_SAIDA(x)&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0);
+ const ent=ALL.filter(r=>inM(r.d)).reduce((a,r)=>a+entVal(r),0),sai=MOVS.filter(x=>IS_SAIDA(x)&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0);
  $('kCx').innerHTML=[['⬆ Entradas'+(m?' no mês':''),money(ent)],['⬇ Saídas'+(m?' no mês':''),money(sai)],['= Resultado',money(ent-sai)]].map(k=>`<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b></div>`).join('');
  const l=MOVS.filter(x=>inM(x.d)).sort((a,b)=>b.d-a.d);
  $('mvList').innerHTML=l.length?l.map(x=>{const s=IS_SAIDA(x);return `<div class="mv" data-id="${esc(x.id)}"><span class="dt">${x.d.toLocaleDateString('pt-BR').slice(0,5)}</span>
@@ -493,7 +534,7 @@ function renderCx(){if(!$('cxVal'))return;const sal=saldoAtual();
   :'<p style="color:#999;font-size:13px">Nenhuma saída registrada neste período.</p>'}
 $('cxMes').addEventListener('change',renderCx);
 function cxSave(m,msg){MOVS=MOVS.filter(x=>x.id!==m.id);MOVS.push(m);saveMv();renderCx();$('sxMsg').textContent='⏳ Salvando...';
- queue({t:'msave',m:{...m,d:iso(m.d)}}).then(ok=>{renderCx();$('sxMsg').textContent=ok?'✅ '+msg:'📴 Guardado no aparelho – envia quando a internet voltar';setTimeout(()=>$('sxMsg').textContent='',4000)})}
+ queue({t:'msave',m:{...m,d:iso(m.d)}}).then(ok=>{renderCx();$('sxMsg').textContent=ok?'✅ '+msg+' (já aparece nos outros aparelhos)':'📴 Guardado no aparelho – envia assim que possível';setTimeout(()=>$('sxMsg').textContent='',5000)})}
 function sxReset(){SXEDIT=null;$('fSx').reset();$('sxD').value=iso(today());$('sxTit').textContent='➖ Nova saída'}
 $('sxN').addEventListener('click',sxReset);
 $('fSx').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('sxD').value),v=numBR($('sxV').value),desc=$('sxDs').value.trim();
@@ -507,8 +548,11 @@ $('mvList').addEventListener('click',e=>{const b=e.target.closest('button[data-m
 $('cxAjB').addEventListener('click',()=>{$('cxAj').classList.toggle('on');$('cxAjV').value=vTxt(Math.max(0,saldoAtual()));$('cxAjI').textContent='';setTimeout(()=>{$('cxAjV').focus();$('cxAjV').select()},50)});
 $('cxAjC').addEventListener('click',()=>$('cxAj').classList.remove('on'));
 $('cxAjV').addEventListener('input',()=>{const d=r2(numS($('cxAjV').value)-saldoAtual());$('cxAjI').textContent=d?`Será lançado um ajuste de ${d>0?'+':'−'} ${brl(Math.abs(d))}.`:'Sem diferença.'});
-$('cxAj').addEventListener('submit',e=>{e.preventDefault();const novo=numS($('cxAjV').value),dif=r2(novo-saldoAtual());
- if(!dif){$('cxAj').classList.remove('on');return}
+$('cxAj').addEventListener('submit',async e=>{e.preventDefault();const novo=numS($('cxAjV').value);
+ /* confere com a planilha antes, para o ajuste ficar certo em todos os aparelhos */
+ if(navigator.onLine!==false&&!PEND.length){$('cxAjI').textContent='⏳ Conferindo com a planilha...';await sync(false)}
+ const dif=r2(novo-saldoAtual());
+ if(!dif){$('cxAj').classList.remove('on');status('Saldo já está em '+brl(novo));return}
  cxSave({id:newId(),d:today(),tp:'Ajuste',desc:$('cxAjM').value.trim()||'Ajuste de saldo (conferido '+brl(novo)+')',cat:'',v:dif,fp:''},'Saldo atualizado para '+brl(novo));
  $('cxAj').classList.remove('on');$('cxAj').reset()});
 
@@ -516,10 +560,10 @@ $('cxAj').addEventListener('submit',e=>{e.preventDefault();const novo=numS($('cx
 let VM=today(),SEL=today(),EDIT=null;VM.setDate(1);
 const liqOf=a=>r2(Math.max(0,numBR(a.v)-numBR(a.de)-numBR(a.pa)-numBR(a.tx)));
 const waLink=a=>{const w=String(a.tel||'').replace(/\D/g,'').replace(/^55/,'');return w?` <a href="https://wa.me/55${w}" target="_blank" title="WhatsApp" aria-label="WhatsApp">💬</a>`:''};
-const pendPill=a=>isPend(a.id)?' <span class="pill pend" title="Guardado no aparelho, aguardando internet">📴 não enviado</span>':'';
+const pendPill=a=>isPend(a.id)?' <span class="pill pend" title="Guardado no aparelho, aguardando envio">📴 não enviado</span>':'';
 function lnHtml(a){const fin=FINAL(a.st),fal=FALTA(a.st),can=CANC(a.st),cl=fin||fal||can,ab=ABERTA(a);
  const sub=[esc(a.proc)||'—',
-  fin?`<b style="color:var(--gr)">${brl(liqOf(a))}</b>${a.pag?' · '+esc(a.pag):''}`:'',
+  fin?`<b style="color:var(--gr)">${brl(liqOf(a))}</b> · ${pagDet(parsePags(a))}`:'',
   fal?'<span style="color:var(--rd)">não compareceu</span>':'',can?'<span style="color:var(--rd)">cancelado</span>':''].filter(Boolean).join(' · ');
  return `<div class="ln ${ab?'ab':''}" data-id="${esc(a.id)}"><span class="hr">${esc(a.h)||'--:--'}</span>
   <div class="who"><b>${esc(a.cli)}</b>${waLink(a)}${ab?' <span class="pill ab">💰 em aberto</span>':''}${sesPill(a)}${pendPill(a)}<br><small>${sub}</small></div>
@@ -535,7 +579,8 @@ function dayClick(e){const b=e.target.closest('button[data-a]');if(!b||b.disable
  if(act==='sim'||(act==='ed'&&FINAL(a.st))){if(act==='sim')box.classList.add('on');else box.classList.toggle('on');if(box.classList.contains('on'))setTimeout(()=>box.querySelector('.pV').focus(),50)}
  else if(act==='ed'){closePop();openAg(a)}
  else if(act==='nao'){if(!confirm(a.cli+' não compareceu?'))return;daySave({...a,st:'Faltou',...blankPay},'Falta registrada: '+a.cli)}
- else if(act==='ok'){const pay=payRead(box);if(!pay.v&&!pay.pa&&!confirm('Valor está zerado. Confirmar assim mesmo?'))return;
+ else if(act==='ok'){const pay=payRead(box);if(pay.bad){alert('A soma das formas de pagamento passou do valor cobrado. Ajuste os valores.');return}
+  if(!pay.v&&!pay.pa&&!confirm('Valor está zerado. Confirmar assim mesmo?'))return;delete pay.bad;
   daySave({...a,st:'Finalizado',...pay},FINAL(a.st)?'Valores atualizados: '+a.cli:a.cli+' compareceu – lançado no Financeiro')}}
 $('popB').addEventListener('click',dayClick);$('dList').addEventListener('click',dayClick);
 function daySave(reg,txt){AGENDA=AGENDA.filter(a=>a.id!==reg.id);AGENDA.push(reg);saveAg();status('⏳ Salvando na planilha...');
@@ -633,7 +678,7 @@ function GS(fn,...args){return new Promise((ok,er)=>{
  if(!CFG.url||!CFG.key){const e=new Error('Acesso não configurado');e.auth=true;er(e);return}
  if(navigator.onLine===false){er(new Error('sem internet'));return}
  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),45000);
- fetch(CFG.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:CFG.key,fn,args}),signal:ac.signal,redirect:'follow'})
+ fetch(CFG.url,{method:'POST',cache:'no-store',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:CFG.key,fn,args}),signal:ac.signal,redirect:'follow'})
   .then(r=>r.text()).then(tx=>{clearTimeout(t);let j;try{j=JSON.parse(tx)}catch(_){throw new Error('Resposta inválida da API – confira o link e se a implantação está com acesso "Qualquer pessoa"')}
    if(!j.ok){const e=new Error(j.erro||'erro');e.auth=!!j.auth;throw e}ok(j.r)})
   .catch(e=>{clearTimeout(t);if(e&&e.name==='AbortError')e=new Error('sem resposta (internet?)');if(e&&e.auth)showSetup(e.message);er(e)})})}
@@ -648,14 +693,15 @@ $('suF').addEventListener('submit',async e=>{e.preventDefault();const u=$('suU')
 const agFromServer=l=>(l||[]).map(a=>({...a,ses:+a.ses||0,tot:+a.tot||0,d:toDate(a.d)})).filter(a=>a.d);
 const mvFromServer=l=>(l||[]).map(m=>({...m,v:+m.v||0,d:toDate(m.d)})).filter(m=>m.d);
 const prFromServer=l=>(l||[]).map(p=>({id:p.id,proc:p.proc,v:p.v,ativo:p.ativo,d:toDate(p.desde)})).filter(p=>p.d);
-const blankPay={v:0,de:0,pa:0,tx:0,pag:''};
+const blankPay={v:0,de:0,pa:0,tx:0,pag:'',pgs:''};
 
 $('fAg').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('aD').value);if(!d)return;
  const reg={id:EDIT||newId(),d,h:$('aH').value,cli:$('aC').value.trim(),proc:joinP(getProcs()),tel:$('aT').value.trim(),st:$('aS').value,obs:$('aO').value.trim(),
   ses:intIn($('aSes').value),tot:intIn($('aTot').value),...blankPay};
  if(!reg.cli)return;
  if(reg.ses&&reg.tot&&reg.ses>reg.tot&&!confirm(`A sessão (${reg.ses}) é maior que o total (${reg.tot}). Salvar mesmo assim?`))return;
- if(FINAL(reg.st)){if(!$('finBox').innerHTML)finBox();Object.assign(reg,payRead($('finBox')));if(!reg.v&&!reg.pa&&!confirm('Valor está zerado. Salvar assim mesmo?'))return}
+ if(FINAL(reg.st)){if(!$('finBox').innerHTML)finBox();const pay=payRead($('finBox'));if(pay.bad){alert('A soma das formas de pagamento passou do valor cobrado. Ajuste os valores.');return}
+  delete pay.bad;Object.assign(reg,pay);if(!reg.v&&!reg.pa&&!confirm('Valor está zerado. Salvar assim mesmo?'))return}
  const conf=AGENDA.find(a=>a.id!==reg.id&&key(a.d)===key(reg.d)&&a.h===reg.h&&!CANC(a.st));
  if(conf&&!confirm(`Já existe ${conf.cli} às ${conf.h} nesse dia. Salvar mesmo assim?`))return;
  const eraEdit=!!EDIT;AGENDA=AGENDA.filter(a=>a.id!==reg.id);AGENDA.push(reg);saveAg();
@@ -666,7 +712,7 @@ $('fAg').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('aD')
   $('okS').textContent='⏳ Salvando na planilha...';agForm(false);EDIT=null}
  p.then(ok=>{renderAg();
   if(eraEdit)status(ok?'✅ Agendamento atualizado':'📴 Alteração guardada no aparelho');
-  else $('okS').textContent=ok?'✓ Salvo na planilha':'📴 Sem internet – guardado no aparelho. Será enviado quando a conexão voltar.'})});
+  else $('okS').textContent=ok?'✓ Salvo na planilha':'📴 Guardado no aparelho. Será enviado assim que possível.'})});
 $('aDel').addEventListener('click',()=>{if(!EDIT||!confirm('Excluir este agendamento?'))return;const id=EDIT;
  AGENDA=AGENDA.filter(a=>a.id!==id);saveAg();closeAg();renderAg();refreshFin();status('⏳ Excluindo...');
  queue({t:'del',id}).then(ok=>status(ok?'🗑 Agendamento excluído':'📴 Exclusão guardada no aparelho'))});
@@ -688,7 +734,7 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if($('agM').c
 
 /* ---------- Taxas (precisa de internet) ---------- */
 function renderTx(){$('txList').innerHTML=TAXAS.map((t,i)=>`<div class="txr" data-i="${i}"><input class="tF" value="${esc(t.forma)}" aria-label="Forma de pagamento"><input class="tP" inputmode="decimal" value="${String(t.pct).replace('.',',')}" aria-label="Taxa %"><button type="button" class="sec" data-tdel="${i}" aria-label="Remover" style="padding:4px">✕</button></div>`).join('')}
-function readTx(){return[...$('txList').querySelectorAll('.txr')].map(r=>({forma:r.querySelector('.tF').value.trim(),pct:Math.min(100,numBR(r.querySelector('.tP').value))})).filter(t=>t.forma)}
+function readTx(){return[...$('txList').querySelectorAll('.txr')].map(r=>({forma:r.querySelector('.tF').value.trim().replace(/[|:]/g,' '),pct:Math.min(100,numBR(r.querySelector('.tP').value))})).filter(t=>t.forma)}
 $('txList').addEventListener('click',e=>{const b=e.target.closest('[data-tdel]');if(!b)return;TAXAS=readTx();TAXAS.splice(+b.dataset.tdel,1);renderTx()});
 $('txAdd').addEventListener('click',()=>{TAXAS=readTx();TAXAS.push({forma:'',pct:0});renderTx();const l=$('txList').querySelectorAll('.tF');l[l.length-1].focus()});
 $('txSave').addEventListener('click',()=>{const l=readTx();if(!l.length){alert('Cadastre pelo menos uma forma de pagamento.');return}
@@ -733,23 +779,26 @@ $('fPr').addEventListener('submit',e=>{e.preventDefault();const proc=$('pfP').va
  if(n&&!confirm(`${n} atendimento(s) finalizado(s) com "${proc}" a partir de ${d.toLocaleDateString('pt-BR')} serão atualizados para o novo valor.\n(Desconto e "pago antes" são mantidos; a taxa é recalculada.) Confirmar?`))return;
  prMsg('⏳ Salvando...');
  const go=()=>GS('salvarPreco',{proc,v,desde:iso(d),aplicar:ap}).then(r=>{afterPr(r);prReset();prMsg(`✅ Salvo${r.n?' · '+r.n+' atendimento(s) atualizado(s) no Financeiro':''}`)});
- (PEND.length?flush():Promise.resolve(true)).then(ok=>{if(!ok)throw new Error('há alterações aguardando internet');return go()}).catch(err=>{prMsg('');errNet(err)})});
+ (PEND.length?flush():Promise.resolve(true)).then(ok=>{if(!ok)throw new Error('há alterações aguardando envio');return go()}).catch(err=>{prMsg('');errNet(err)})});
 
 /* ---------- Sincronização ---------- */
-let BUSY=false;
-const ocupado=()=>POPOPEN||$('agM').classList.contains('on')||!!document.querySelector('.lnc.on');
-async function sync(manual){if(BUSY)return;BUSY=true;if(manual)status('🔄 Atualizando...');
- try{if(PEND.length&&!(await flush()))throw new Error('sem internet');
+let BUSY=null;
+const ocupado=()=>POPOPEN||$('agM').classList.contains('on')||!!document.querySelector('.lnc.on')||$('cxAj').classList.contains('on');
+function sync(manual){if(BUSY)return BUSY;if(manual)status('🔄 Atualizando...');
+ BUSY=(async()=>{try{if(PEND.length)await flush();
   const r=await GS('carregar');
+  VERWARN=(!r||r.versao!==SITE_VERSAO)?'O Código.gs do Apps Script está desatualizado (o caixa e a divisão do pagamento não vão sincronizar entre os aparelhos). Cole o Código.gs mais recente e publique como "Nova versão".':'';
   if(r.taxas&&r.taxas.length){TAXAS=r.taxas;saveTx();renderTx()}
   if(r.precos&&r.precos.length){PRECOS=prFromServer(r.precos);savePr();fillProcs();renderPr()}
   AGENDA=applyPend(agFromServer(r.ag));saveAg();
-  MOVS=applyPendM(mvFromServer(r.movs));saveMv();
+  if(Array.isArray(r.movs)){MOVS=applyPendM(mvFromServer(r.movs));saveMv()}
+  LASTSYNC=Date.now();STORE.set('dashLast',String(LASTSYNC));
   refreshFin();renderAg();renderPop();fillCli();
   const nAb=AGENDA.filter(ABERTA).length;
   status(`✅ ${AGENDA.length} na agenda${nAb?' · ⚠ '+nAb+' comanda(s) em aberto':''} · ${r.atualizado}`)}
  catch(e){if(e&&e.auth){status('🔐 Informe a senha');return}status(isNetErr(e)?'📴 Sem internet – usando os dados guardados no aparelho':'⚠ Não consegui ler a planilha: '+(e&&e.message||e))}
- finally{BUSY=false;netUpd();$('load').style.display='none'}}
+ finally{netUpd();$('load').style.display='none';$('acInfo').textContent='Site versão '+SITE_VERSAO+(LASTSYNC?' · última sincronização '+new Date(LASTSYNC).toLocaleString('pt-BR').slice(0,17):'')}})()
+ .finally(()=>{BUSY=null});return BUSY}
 $('btnRef').addEventListener('click',()=>sync(true));
 
 /* ---------- Abas ---------- */
@@ -759,15 +808,15 @@ function showTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.tog
  $('fab').classList.toggle('vis',t==='age');
  ['filtros','btnFil','btnCsv'].forEach(i=>$(i).style.display=t==='fin'?'':'none');
  $('btnEye').style.display=t==='fin'||t==='cx'?'':'none';
- if(t==='fin')render();if(t==='age')renderAg();if(t==='cx')renderCx();if(t==='proc'){renderPr();renderTx()}window.scrollTo(0,0)}
+ if(t==='fin')render();if(t==='age')renderAg();if(t==='cx'){renderCx();if(CFG.key)sync()}if(t==='proc'){renderPr();renderTx()}window.scrollTo(0,0)}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
 $('btnFil').addEventListener('click',()=>$('filtros').classList.toggle('on'));
 
 $('acTroca').addEventListener('click',()=>showSetup(''));
 $('acSair').addEventListener('click',()=>{if(PEND.length&&!confirm('Há '+PEND.length+' alteração(ões) ainda não enviadas. Se sair, elas serão perdidas. Sair mesmo assim?'))return;
  if(!confirm('Sair deste aparelho? A senha e os dados guardados aqui serão apagados.'))return;
- ['apiKey','dashAg','dashMv','dashPend','dashPr','dashTx'].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.reload()});
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+ ['apiKey','dashAg','dashMv','dashPend','dashPr','dashTx','dashLast'].forEach(k=>{try{localStorage.removeItem(k)}catch(_){}});location.reload()});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{}));
 
 /* ---------- Início ---------- */
 AGENDA=applyPend(AGENDA);MOVS=applyPendM(MOVS);
@@ -776,6 +825,7 @@ if(AGENDA.length){$('load').style.display='none';status('⏳ Mostrando últimos 
 const T0=Date.now(),tick=setInterval(()=>{if($('load').style.display==='none'){clearInterval(tick);return}
  const s=Math.round((Date.now()-T0)/1000);$('loadT').textContent=s+'s'+(s>40?' – está demorando demais. Verifique a internet ou me mande um print.':'')},1000);
 if(!CFG.url||!CFG.key)showSetup('');else sync();
-setInterval(()=>{if(document.visibilityState!=='visible')return;if(PEND.length)flush();else if(!ocupado())sync()},60000);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(PEND.length)flush().then(ok=>{if(ok&&!ocupado())sync()});else if(!ocupado())sync()});
+setInterval(()=>{if(document.visibilityState!=='visible'||!CFG.key)return;if(PEND.length)flush();else if(!ocupado())sync()},30000);
+const onBack=()=>{if(document.visibilityState!=='visible'||!CFG.key)return;if(!ocupado())sync();else if(PEND.length)flush()};
+document.addEventListener('visibilitychange',onBack);window.addEventListener('focus',onBack);window.addEventListener('pageshow',onBack);
 </script></body></html>

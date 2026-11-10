@@ -1,5 +1,5 @@
 /* Faz a agenda abrir sem internet. Ao publicar uma versão nova do index.html, aumente o número abaixo. */
-const VERSAO = 'agenda-v16';
+const VERSAO = 'agenda-v17';
 const ARQUIVOS = ['./', 'index.html', 'manifest.json', 'logo.jpg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(VERSAO).then(c => c.put(req, cp)); } return r; })
+    fetch(req, { cache: 'no-store' }).then(r => { if (r.ok) { const cp = r.clone(); caches.open(VERSAO).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html')))
   );
 });
