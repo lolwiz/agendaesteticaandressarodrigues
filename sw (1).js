@@ -1,5 +1,5 @@
 /* Faz a agenda abrir sem internet. Ao publicar uma versão nova do index.html, aumente o número abaixo. */
-const VERSAO = 'agenda-v18';
+const VERSAO = 'agenda-v19';
 const ARQUIVOS = ['./', 'index.html', 'manifest.json', 'logo.jpg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

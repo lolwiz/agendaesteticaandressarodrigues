@@ -87,8 +87,11 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 #cxSaldo{border-left:6px solid var(--gr);margin-bottom:14px}#cxSaldo.negat{border-left-color:var(--rd)}
 #cxVal{font-size:34px;font-weight:800;color:var(--gr);margin:4px 0}#cxSaldo.negat #cxVal{color:var(--rd)}
 #cxAj{display:none;margin-top:10px;background:#fff4ea;border:1px dashed var(--or);border-radius:8px;padding:10px}#cxAj.on{display:block}
+.seg{display:flex;margin-bottom:10px}.seg button{flex:1;background:#fff;border:1px solid #e3c2a3;color:#8a6a50;border-radius:0;min-height:42px}
+.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+#sxTS.on{background:var(--rd);border-color:var(--rd);color:#fff}#sxTE.on{background:var(--gr);border-color:var(--gr);color:#fff}
 .mv{display:grid;grid-template-columns:52px minmax(0,1fr) auto 36px 36px;gap:6px;align-items:center;padding:8px 4px;border-bottom:1px solid #f3dcc6;font-size:13px}
-.mv .dt{color:#8a6a50;font-size:12px}.mv .vl{font-weight:700;white-space:nowrap}.mv .vl.s{color:var(--rd)}.mv .vl.a{color:#5b3c99}
+.mv .dt{color:#8a6a50;font-size:12px}.mv .vl{font-weight:700;white-space:nowrap}.mv .vl.s{color:var(--rd)}.mv .vl.e{color:var(--gr)}.mv .vl.a{color:#5b3c99}
 .mv button{width:36px;height:36px;padding:0;border-radius:50%;background:#fff;border:1px solid var(--or);color:var(--or)}.mv button.del{border-color:var(--rd);color:var(--rd)}
 /* valores */
 .prg{display:grid;grid-template-columns:1fr 2fr;gap:14px}@media(max-width:900px){.prg{grid-template-columns:1fr}}
@@ -213,13 +216,14 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
     </form>
    </div>
    <div class="card"><h3 id="sxTit">➖ Nova saída</h3>
+    <div class="seg" role="group" aria-label="Tipo de movimento"><button type="button" id="sxTS" class="on" aria-pressed="true">➖ Saída</button><button type="button" id="sxTE" aria-pressed="false">➕ Entrada</button></div>
     <form id="fSx" class="fm" autocomplete="off">
      <label>Data<input type="date" id="sxD" required></label>
      <label>Valor (R$)<input id="sxV" inputmode="decimal" required placeholder="0,00"></label>
      <label class="full">Descrição<input id="sxDs" required placeholder="Ex.: Compra de cera"></label>
-     <label>Categoria<select id="sxC"><option>Produtos / materiais</option><option>Aluguel</option><option>Energia</option><option>Água</option><option>Internet / telefone</option><option>Marketing</option><option>Equipamentos</option><option>Impostos / taxas</option><option>Retirada pessoal</option><option>Outros</option></select></label>
-     <label>Pago com<select id="sxF"><option>Dinheiro</option><option>Pix</option><option>Cartão</option><option>Outro</option></select></label>
-     <div class="full" style="display:flex;gap:6px;flex-wrap:wrap"><button type="submit">💾 Salvar saída</button><button type="button" class="sec" id="sxN">Limpar</button></div>
+     <label>Categoria<select id="sxC"></select></label>
+     <label><span id="sxFL">Pago com</span><select id="sxF"><option>Dinheiro</option><option>Pix</option><option>Cartão</option><option>Outro</option></select></label>
+     <div class="full" style="display:flex;gap:6px;flex-wrap:wrap"><button type="submit" id="sxBtn">💾 Salvar saída</button><button type="button" class="sec" id="sxN">Limpar</button></div>
      <span id="sxMsg" class="full" style="font-size:12px;color:var(--gr)" aria-live="polite"></span>
     </form>
    </div>
@@ -320,7 +324,7 @@ td{padding:6px 7px;border-bottom:1px solid #f3dcc6}tr:nth-child(even) td{backgro
 window.onerror=function(m,s,l){var d=document.getElementById('load');if(d){d.style.display='flex';d.innerHTML='⚠ Erro: '+m+' (linha '+l+')<br><small>Mande um print deste erro.</small>';}};
 var STORE={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 const SITE_VERSAO=17;   /* versão esperada do Código.gs (servidor) */
-const SITE_BUILD=18;    /* versão desta tela */
+const SITE_BUILD=19;    /* versão desta tela */
 
 const $=id=>document.getElementById(id);
 const brl=v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -522,40 +526,63 @@ $('btnEye').addEventListener('click',toggleHide);$('sumEye').addEventListener('c
 $('btnCsv').addEventListener('click',()=>{const n=v=>String(r2(v)).replace('.',',');const c='Dia;Cliente;Procedimentos;Pagamento;Valor;Desconto;Pago antes;Taxa;Liquido\n'+filt().map(r=>[r.ds,r.cli,r.proc,r.pgs.length>1?r.pgs.map(p=>p.f+' '+n(p.v)).join(' + '):r.pag,n(r.v),n(r.de),n(r.pa),n(r.tx),n(r.liq)].join(';')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv'}));a.download='atendimentos.csv';a.click()});
 
-/* ---------- Caixa ---------- */
-const IS_SAIDA=m=>norm(m.tp)!=='ajuste';
+/* ---------- Caixa: entradas, saídas e ajustes ---------- */
+/* tipo do movimento: 's' = saída, 'e' = entrada avulsa, 'a' = ajuste de saldo */
+const TPM=m=>{const n=norm(m.tp);return n==='ajuste'?'a':n==='entrada'?'e':'s'};
+const CAT_S=['Produtos / materiais','Aluguel','Energia','Água','Internet / telefone','Marketing','Equipamentos','Impostos / taxas','Retirada pessoal','Outros'];
+const CAT_E=['Venda de produto','Aporte / depósito','Recebimento avulso','Outros'];
 const entVal=r=>r2(Math.max(0,r.liq-r.pgs.filter(p=>norm(p.f)==='permuta').reduce((s,p)=>s+p.v,0)));
-function saldoAtual(){const e=ALL.reduce((a,r)=>a+entVal(r),0);let s=0,aj=0;MOVS.forEach(m=>{if(IS_SAIDA(m))s+=Math.abs(m.v);else aj+=m.v});return r2(e-s+aj)}
-let SXEDIT=null;
+/* Saldo = atendimentos (líquido) + entradas avulsas − saídas ± ajustes */
+function saldoAtual(){const e=ALL.reduce((a,r)=>a+entVal(r),0);let s=0,en=0,aj=0;
+ MOVS.forEach(m=>{const t=TPM(m);if(t==='s')s+=Math.abs(m.v);else if(t==='e')en+=Math.abs(m.v);else aj+=m.v});return r2(e+en-s+aj)}
+let SXEDIT=null,SXTP='Saída';
+function sxTipo(tp){SXTP=tp;const e=tp==='Entrada';
+ $('sxTS').classList.toggle('on',!e);$('sxTE').classList.toggle('on',e);$('sxTS').setAttribute('aria-pressed',String(!e));$('sxTE').setAttribute('aria-pressed',String(e));
+ $('sxC').innerHTML=(e?CAT_E:CAT_S).map(c=>`<option>${c}</option>`).join('');
+ $('sxFL').textContent=e?'Recebido com':'Pago com';$('sxBtn').textContent=e?'💾 Salvar entrada':'💾 Salvar saída';
+ $('sxBtn').style.background=e?'var(--gr)':'';$('sxDs').placeholder=e?'Ex.: Venda de hidratante':'Ex.: Compra de cera';
+ $('sxTit').textContent=SXEDIT?(e?'✏️ Editar entrada':'✏️ Editar saída'):(e?'➕ Nova entrada':'➖ Nova saída')}
+$('sxTS').addEventListener('click',()=>sxTipo('Saída'));$('sxTE').addEventListener('click',()=>sxTipo('Entrada'));
 function cxMesOpts(){const cur=$('cxMes').value,t=mk(today());const ms=[...new Set(MOVS.map(m=>mk(m.d)).concat(ALL.map(r=>mk(r.d))).concat([t]))].sort().reverse();
  $('cxMes').innerHTML=ms.map(m=>`<option value="${m}">${MESES[+m.slice(5)-1]}/${m.slice(0,4)}</option>`).join('')+'<option value="">Todos</option>';
  $('cxMes').value=[...$('cxMes').options].some(o=>o.value===cur)&&$('cxMes').dataset.init?cur:t;$('cxMes').dataset.init='1'}
 function renderCx(){if(!$('cxVal'))return;const sal=saldoAtual();
  $('cxVal').textContent=money(sal);$('cxSaldo').classList.toggle('negat',sal<0);
- const lastAj=MOVS.filter(m=>!IS_SAIDA(m)).sort((a,b)=>b.d-a.d)[0],pm=PEND.filter(p=>p.t==='msave'||p.t==='mdel').length;
- $('cxInfo').innerHTML='Entradas dos atendimentos (líquido) − saídas'+(lastAj?' · último ajuste em '+lastAj.d.toLocaleDateString('pt-BR'):'')+
+ const lastAj=MOVS.filter(m=>TPM(m)==='a').sort((a,b)=>b.d-a.d)[0],pm=PEND.filter(p=>p.t==='msave'||p.t==='mdel').length;
+ $('cxInfo').innerHTML='Atendimentos (líquido) + entradas − saídas'+(lastAj?' · último ajuste em '+lastAj.d.toLocaleDateString('pt-BR'):'')+
   (pm?`<br><span style="color:#b9770e">⏳ ${pm} movimento(s) ainda não enviado(s) – os outros aparelhos ainda não veem.</span>`:LASTSYNC?`<br>Sincronizado às ${new Date(LASTSYNC).toLocaleTimeString('pt-BR').slice(0,5)}`:'');
  cxMesOpts();const m=$('cxMes').value,inM=d=>!m||mk(d)===m;
- const ent=ALL.filter(r=>inM(r.d)).reduce((a,r)=>a+entVal(r),0),sai=MOVS.filter(x=>IS_SAIDA(x)&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0);
- $('kCx').innerHTML=[['⬆ Entradas'+(m?' no mês':''),money(ent)],['⬇ Saídas'+(m?' no mês':''),money(sai)],['= Resultado',money(ent-sai)]].map(k=>`<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b></div>`).join('');
+ const entAt=ALL.filter(r=>inM(r.d)).reduce((a,r)=>a+entVal(r),0),
+  entAv=MOVS.filter(x=>TPM(x)==='e'&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0),
+  sai=MOVS.filter(x=>TPM(x)==='s'&&inM(x.d)).reduce((a,x)=>a+Math.abs(x.v),0);
+ $('kCx').innerHTML=[['⬆ Entradas'+(m?' no mês':''),money(entAt+entAv),entAv?'atendimentos '+money(entAt)+' + avulsas '+money(entAv):''],['⬇ Saídas'+(m?' no mês':''),money(sai),''],['= Resultado',money(entAt+entAv-sai),'']]
+  .map(k=>`<div class="kpi"><span>${k[0]}</span><b>${k[1]}</b>${k[2]?`<small style="font-size:11px;color:#8a6a50">${k[2]}</small>`:''}</div>`).join('');
  const l=MOVS.filter(x=>inM(x.d)).sort((a,b)=>b.d-a.d);
- $('mvList').innerHTML=l.length?l.map(x=>{const s=IS_SAIDA(x);return `<div class="mv" data-id="${esc(x.id)}"><span class="dt">${x.d.toLocaleDateString('pt-BR').slice(0,5)}</span>
-  <span><b>${esc(x.desc)||(s?'Saída':'Ajuste de saldo')}</b>${isPend('m:'+x.id)?' <span class="pill pend">📴 não enviado</span>':''}<br><small style="color:#8a6a50">${s?esc(x.cat)+(x.fp?' · '+esc(x.fp):''):'Ajuste de saldo'}</small></span>
-  <span class="vl ${s?'s':'a'}">${s?'− '+money(Math.abs(x.v)):(x.v<0?'− ':'+ ')+money(Math.abs(x.v))}</span>
-  ${s?`<button type="button" data-m="ed" aria-label="Editar saída" title="Editar">✏️</button>`:'<span></span>'}<button type="button" class="del" data-m="del" aria-label="Excluir" title="Excluir">🗑</button></div>`}).join('')
-  :'<p style="color:#999;font-size:13px">Nenhuma saída registrada neste período.</p>'}
+ $('mvList').innerHTML=l.length?l.map(x=>{const t=TPM(x);
+  const tit=esc(x.desc)||(t==='s'?'Saída':t==='e'?'Entrada':'Ajuste de saldo'),sub=t==='a'?'Ajuste de saldo':(t==='e'?'Entrada · ':'')+esc(x.cat)+(x.fp?' · '+esc(x.fp):'');
+  const val=t==='s'?'− '+money(Math.abs(x.v)):t==='e'?'+ '+money(Math.abs(x.v)):(x.v<0?'− ':'+ ')+money(Math.abs(x.v));
+  return `<div class="mv" data-id="${esc(x.id)}"><span class="dt">${x.d.toLocaleDateString('pt-BR').slice(0,5)}</span>
+  <span><b>${tit}</b>${isPend('m:'+x.id)?' <span class="pill pend">📴 não enviado</span>':''}<br><small style="color:#8a6a50">${sub}</small></span>
+  <span class="vl ${t}">${val}</span>
+  ${t!=='a'?`<button type="button" data-m="ed" aria-label="Editar" title="Editar">✏️</button>`:'<span></span>'}<button type="button" class="del" data-m="del" aria-label="Excluir" title="Excluir">🗑</button></div>`}).join('')
+  :'<p style="color:#999;font-size:13px">Nenhum movimento registrado neste período.</p>'}
 $('cxMes').addEventListener('change',renderCx);
 function cxSave(m,msg){MOVS=MOVS.filter(x=>x.id!==m.id);MOVS.push(m);saveMv();renderCx();$('sxMsg').textContent='⏳ Salvando...';
  queue({t:'msave',m:{...m,d:iso(m.d)}}).then(ok=>{renderCx();$('sxMsg').textContent=ok?'✅ '+msg+' (já aparece nos outros aparelhos)':'📴 Guardado no aparelho – envia assim que possível';setTimeout(()=>$('sxMsg').textContent='',5000)})}
-function sxReset(){SXEDIT=null;$('fSx').reset();$('sxD').value=iso(today());$('sxTit').textContent='➖ Nova saída'}
+function sxReset(){SXEDIT=null;$('fSx').reset();$('sxD').value=iso(today());sxTipo(SXTP)}
 $('sxN').addEventListener('click',sxReset);
 $('fSx').addEventListener('submit',e=>{e.preventDefault();const d=toDate($('sxD').value),v=numBR($('sxV').value),desc=$('sxDs').value.trim();
- if(!d||!desc)return;if(!v){alert('Informe o valor da saída.');return}
- const ed=!!SXEDIT;cxSave({id:SXEDIT||newId(),d,tp:'Saída',desc,cat:$('sxC').value,v,fp:$('sxF').value},ed?'Saída atualizada':'Saída registrada – descontada do saldo');sxReset()});
+ if(!d||!desc)return;const ent=SXTP==='Entrada';if(!v){alert('Informe o valor da '+(ent?'entrada':'saída')+'.');return}
+ const ed=!!SXEDIT;
+ cxSave({id:SXEDIT||newId(),d,tp:SXTP,desc,cat:$('sxC').value,v,fp:$('sxF').value},
+  ed?(ent?'Entrada atualizada':'Saída atualizada'):(ent?'Entrada registrada – somada ao saldo':'Saída registrada – descontada do saldo'));sxReset()});
 $('mvList').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(!b)return;const id=b.closest('.mv').dataset.id,m=MOVS.find(x=>x.id===id);if(!m)return;
- if(b.dataset.m==='ed'){SXEDIT=id;$('sxD').value=iso(m.d);$('sxV').value=vTxt(Math.abs(m.v));$('sxDs').value=m.desc;$('sxC').value=m.cat||'Outros';$('sxF').value=m.fp||'Dinheiro';
-  $('sxTit').textContent='✏️ Editar saída';$('fSx').scrollIntoView({behavior:'smooth',block:'center'})}
- else{if(!confirm('Excluir este movimento? O saldo será recalculado.'))return;MOVS=MOVS.filter(x=>x.id!==id);saveMv();renderCx();
+ if(b.dataset.m==='ed'){SXEDIT=id;sxTipo(TPM(m)==='e'?'Entrada':'Saída');
+  $('sxD').value=iso(m.d);$('sxV').value=vTxt(Math.abs(m.v));$('sxDs').value=m.desc;
+  if(m.cat&&![...$('sxC').options].some(o=>o.value===m.cat)){const o=document.createElement('option');o.textContent=m.cat;$('sxC').appendChild(o)}
+  $('sxC').value=m.cat||'Outros';$('sxF').value=m.fp||'Dinheiro';
+  $('fSx').scrollIntoView({behavior:'smooth',block:'center'})}
+ else{if(!confirm('Excluir este movimento? O saldo será recalculado.'))return;MOVS=MOVS.filter(x=>x.id!==id);saveMv();renderCx();if(SXEDIT===id)sxReset();
   queue({t:'mdel',id}).then(ok=>status(ok?'🗑 Movimento excluído':'📴 Exclusão guardada no aparelho'))}});
 $('cxAjB').addEventListener('click',()=>{$('cxAj').classList.toggle('on');$('cxAjV').value=vTxt(Math.max(0,saldoAtual()));$('cxAjI').textContent='';setTimeout(()=>{$('cxAjV').focus();$('cxAjV').select()},50)});
 $('cxAjC').addEventListener('click',()=>$('cxAj').classList.remove('on'));
@@ -574,7 +601,6 @@ const waLink=a=>{const w=String(a.tel||'').replace(/\D/g,'').replace(/^55/,'');r
 const pendPill=a=>isPend(a.id)?' <span class="pill pend" title="Guardado no aparelho, aguardando envio">📴 não enviado</span>':'';
 
 /* --- Resumo da semana e do mês (abaixo do calendário) --- */
-/* Liquidado = líquido dos finalizados. Previsto = liquidado + ainda não concluídos (pendente/confirmado/em aberto) pelo valor da tabela. */
 function resumo(ini,fim){let liq=0,aber=0,nF=0,nA=0;
  AGENDA.forEach(a=>{if(a.d<ini||a.d>fim)return;
   if(FINAL(a.st)){liq+=liqOf(a);nF++}
